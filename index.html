@@ -1,557 +1,3107 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>两周年快乐 ❤</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-:root{--rose:#ff5d73;--coral:#ff8a5b;--gold:#ffc86b;--cream:#fff1de;--ink:#2a0d12;
-  --glass:linear-gradient(145deg,rgba(255,235,210,.15),rgba(255,150,110,.05));
-  --ease:cubic-bezier(.2,.8,.2,1)}
-body{font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;color:var(--cream);
-  background:radial-gradient(120% 90% at 20% 0%,#5e2026 0%,#2e1016 45%,#16070b 100%) fixed;overflow-x:hidden}
-body.locked{overflow:hidden;height:100vh}
-#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999}
-#three{position:fixed;inset:0;z-index:0;opacity:0;transition:opacity 2.5s ease .5s;pointer-events:none}
-body.entered #three{opacity:1}
-.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(10,2,4,.55))}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>两周年快乐 ♥</title>
+  <style>
+    /* ================== 基础 ================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
 
-/* ================= 初始界面 ================= */
-#intro{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:radial-gradient(90% 80% at 50% 40%,#6b2229 0%,#32111a 55%,#170810 100%);overflow:hidden;
-  transition:opacity 1.2s ease,filter 1.2s ease,transform 1.2s ease}
-#intro.gone{opacity:0;filter:blur(14px);transform:scale(1.15);pointer-events:none}
-.aurora i{position:absolute;width:55vw;height:55vw;border-radius:50%;filter:blur(110px);opacity:.5;animation:drift 14s ease-in-out infinite alternate}
-.aurora i:nth-child(1){background:#ff5d73;left:-12vw;top:-18vw}
-.aurora i:nth-child(2){background:#ff8a5b;right:-14vw;bottom:-20vw;animation-delay:-5s}
-.aurora i:nth-child(3){background:#ffc86b;left:30vw;top:20vh;width:30vw;height:30vw;opacity:.3;animation-delay:-9s}
-@keyframes drift{to{transform:translate(8vw,6vh) scale(1.2)}}
-.rays{position:absolute;width:160vmax;height:160vmax;left:50%;top:46%;margin:-80vmax 0 0 -80vmax;
-  background:repeating-conic-gradient(from 0deg,rgba(255,200,120,.10) 0 5deg,transparent 5deg 18deg);
-  -webkit-mask:radial-gradient(circle,#000 0,transparent 55%);mask:radial-gradient(circle,#000 0,transparent 55%);animation:spin 80s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.intro-top{position:relative;letter-spacing:.7em;font-size:14px;color:var(--gold);opacity:.85;margin-bottom:28px;padding-left:.7em;
-  animation:fadeDown 1.4s var(--ease) both}
-@keyframes fadeDown{from{opacity:0;transform:translateY(-20px)}}
-.env-stage{position:relative;perspective:1400px;width:700px;height:520px;display:flex;align-items:center;justify-content:center;
-  transition:transform 1.1s cubic-bezier(.7,0,.3,1),opacity 1s ease,filter 1s ease}
-#intro.fly .env-stage{transform:scale(3.2);opacity:0;filter:blur(8px)}
-.env-tilt{position:relative;transform-style:preserve-3d;transition:transform .25s ease-out;width:440px;height:300px}
-.orbit-tilt{position:absolute;left:50%;top:50%;transform-style:preserve-3d;transform:rotateX(-16deg)}
-.orbit{transform-style:preserve-3d;animation:orbit 16s linear infinite}
-@keyframes orbit{to{transform:rotateY(360deg)}}
-.orbit span{position:absolute;left:-12px;top:-12px;font-size:24px;color:var(--gold);text-shadow:0 0 16px #ffb25a;
-  transform:rotateY(calc(var(--i)*40deg)) translateZ(330px);animation:twinkle 2s ease-in-out infinite;animation-delay:calc(var(--i)*-.3s)}
-@keyframes twinkle{50%{opacity:.4;font-size:30px}}
-.env-glow{position:absolute;left:50%;top:50%;width:620px;height:620px;margin:-310px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,170,100,.45),transparent 62%);animation:pulse 1.4s ease-in-out infinite;transform:translateZ(-60px)}
-@keyframes pulse{50%{transform:translateZ(-60px) scale(1.12);opacity:.7}}
-.env-bounce{position:absolute;inset:0;animation:envBounce 1.5s cubic-bezier(.45,0,.55,1) infinite}
-@keyframes envBounce{0%,100%{transform:translateY(0) scale(1.04,.95)}30%{transform:translateY(-44px) scale(.97,1.04) rotate(2deg)}
-  62%{transform:translateY(-6px) rotate(-2deg)}82%{transform:translateY(0) scale(1.03,.96)}}
-.env-shadow{position:absolute;left:50%;bottom:-70px;width:360px;height:40px;margin-left:-180px;border-radius:50%;background:rgba(0,0,0,.5);filter:blur(18px);animation:shadowB 1.5s ease-in-out infinite}
-@keyframes shadowB{0%,100%{transform:scale(1.05);opacity:.7}35%{transform:scale(.7);opacity:.35}}
-#intro.opened .env-bounce,#intro.opened .env-shadow{animation-play-state:paused}
-.env{position:relative;width:440px;height:300px;perspective:900px;cursor:pointer;
-  filter:drop-shadow(0 30px 40px rgba(0,0,0,.5)) drop-shadow(0 0 36px rgba(255,138,91,.4));transition:transform .4s var(--ease)}
-.env:hover{transform:scale(1.05)}
-.env>*{position:absolute}
-.env-back{inset:0;border-radius:10px;background:linear-gradient(160deg,#d94f48,#a93440)}
-.letter{left:6%;right:6%;top:6%;bottom:6%;z-index:2;border-radius:8px;background:linear-gradient(160deg,#fffaf0,#ffe3c0);
-  display:grid;place-items:center;text-align:center;color:#a03a3a;transition:transform 1s cubic-bezier(.3,1.25,.4,1) .55s}
-.letter small{display:block;letter-spacing:.25em;font-size:11px;color:#c98a5a}
-.letter b{display:block;font-size:44px;line-height:1.2;color:#ff5d73}
-.letter span{font-size:15px;font-family:"STKaiti","KaiTi",serif}
-.env.open .letter{transform:translateY(-64%)}
-.env-front{inset:0;z-index:3;clip-path:polygon(0 0,50% 60%,100% 0,100% 100%,0 100%);
-  background:linear-gradient(160deg,#ffa066,#ff6a55 55%,#ee4d5c);display:flex;align-items:flex-end;justify-content:center;padding-bottom:36px}
-.env-text{font-size:46px;font-weight:800;letter-spacing:.28em;padding-left:.28em;
-  background:linear-gradient(100deg,#fff 20%,#ffe19a 40%,#fff 60%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:sheen 2.6s linear infinite;filter:drop-shadow(0 2px 6px rgba(120,20,30,.45))}
-@keyframes sheen{to{background-position:-250% 0}}
-.env-flap{left:0;right:0;top:0;height:60%;z-index:4;transform-origin:50% 0;clip-path:polygon(0 0,100% 0,50% 100%);
-  background:linear-gradient(180deg,#ff8a62,#f45d58);transition:transform .8s cubic-bezier(.5,0,.2,1),z-index 0s .35s,filter .8s}
-.env.open .env-flap{transform:rotateX(180deg);z-index:1;filter:brightness(.82)}
-.seal{left:50%;top:60%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;z-index:6;display:grid;place-items:center;font-size:26px;color:#a0262f;
-  background:radial-gradient(circle at 35% 30%,#ffe3a1,#e89a2c);box-shadow:0 4px 14px rgba(0,0,0,.4),inset 0 -3px 6px rgba(150,70,0,.4);transition:.45s;animation:beat 1.2s ease-in-out infinite}
-@keyframes beat{50%{transform:scale(1.14)}}
-.env.open .seal{transform:scale(0);opacity:0;animation:none}
-.intro-hint{position:relative;margin-top:30px;letter-spacing:.35em;font-size:15px;color:var(--cream);opacity:.85;animation:hint 2s ease-in-out infinite;transition:opacity .5s}
-@keyframes hint{50%{opacity:.35;transform:translateY(4px)}}
-#intro.opened .intro-hint{opacity:0}
-#flash{position:fixed;inset:0;z-index:1500;pointer-events:none;opacity:0;background:radial-gradient(circle,#fff8e6,#ffd28a 40%,#ff8a5b 100%)}
-#flash.go{animation:flash 1.3s ease-out}
-@keyframes flash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+    :root {
+      --rose: #ff6f91;
+      --coral: #ff8a6b;
+      --peach: #ffb38a;
+      --gold: #ffcf70;
+      --champagne: #ffe7b8;
+      --cream: #fff5e9;
+      --wine: #3a0f1c;
+      --deep: #16070c;
+      --font-cn: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+      --font-hand: "STKaiti", "KaiTi", "Kaiti SC", "楷体", serif;
+    }
 
-/* ================= 主页面通用 ================= */
-main{position:relative;z-index:2;visibility:hidden}
-body.entered main{visibility:visible}
-.sec{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:9vh 6vw;z-index:2}
-.reveal{opacity:0;transform:translateY(70px) scale(.96);filter:blur(10px);transition:opacity 1.1s var(--ease),transform 1.1s var(--ease),filter 1.1s var(--ease)}
-.reveal.in{opacity:1;transform:none;filter:none}
-.reveal.from-left{transform:translateX(-90px) rotateY(14deg)}.reveal.from-right{transform:translateX(90px) rotateY(-14deg)}
-.reveal.in.from-left,.reveal.in.from-right{transform:none}
-.grad{background:linear-gradient(100deg,#ffe29a,#ff9a5b,#ff5d73,#ff7eb3,#ffe29a);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 6s linear infinite}
-@keyframes flow{to{background-position:300% 0}}
-.sec-head{text-align:center;margin-bottom:48px}
-.sec-head small{display:block;letter-spacing:.6em;font-size:13px;color:var(--gold);margin-bottom:14px;padding-left:.6em}
-.sec-head h2{font-size:clamp(40px,4.6vw,70px);font-weight:900;letter-spacing:.12em;padding-left:.12em}
-.sec-head .bar{width:90px;height:3px;margin:18px auto 0;background:linear-gradient(90deg,transparent,var(--gold),transparent);border-radius:3px}
-.glare{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .4s;
-  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.4),transparent 55%)}
-.tilting>.glare,.tilting .glare{opacity:1}
-.progress{position:fixed;left:0;top:0;height:3px;width:100%;z-index:900}
-.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--coral),var(--rose));box-shadow:0 0 12px var(--coral)}
-.dots{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:900;display:flex;flex-direction:column;gap:18px}
-.dots a{position:relative;width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,214,160,.6);transition:.4s var(--ease)}
-.dots a.on{background:var(--gold);box-shadow:0 0 14px var(--gold);transform:scale(1.35)}
-.dots a::before{content:attr(data-t);position:absolute;right:26px;top:50%;transform:translate(10px,-50%);opacity:0;white-space:nowrap;font-size:13px;letter-spacing:.15em;color:var(--gold);transition:.35s}
-.dots a:hover::before{opacity:1;transform:translate(0,-50%)}
-.music{position:fixed;left:28px;bottom:28px;z-index:900;width:54px;height:54px;border-radius:50%;border:1px solid rgba(255,214,160,.4);cursor:pointer;
-  background:radial-gradient(circle,#ffc86b 0 9%,#2a0d12 10% 38%,#4a1a22 39% 41%,#2a0d12 42% 62%,#4a1a22 63% 65%,#2a0d12 66%);
-  box-shadow:0 0 24px rgba(255,138,91,.5);animation:spin 5s linear infinite;animation-play-state:paused;transition:transform .3s}
-.music.on{animation-play-state:running}.music:hover{transform:scale(1.12)}
-.music.off::after{content:"";position:absolute;left:50%;top:-4px;width:3px;height:62px;background:var(--rose);transform:rotate(45deg);border-radius:2px}
+    @property --ang {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false
+    }
 
-/* ---- Hero ---- */
-#hero{flex-direction:column;overflow:clip}
-.gyro{position:absolute;left:50%;top:50%;width:760px;height:760px;margin:-380px;transform-style:preserve-3d;animation:gyro 24s linear infinite;pointer-events:none}
-.gyro i{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(255,200,120,.35);box-shadow:0 0 30px rgba(255,138,91,.25),inset 0 0 30px rgba(255,138,91,.15)}
-.gyro i:nth-child(1){transform:rotateX(70deg)}.gyro i:nth-child(2){transform:rotateY(70deg) scale(.86)}.gyro i:nth-child(3){transform:rotateX(35deg) rotateY(35deg) scale(.7);border-style:dashed}
-@keyframes gyro{to{transform:rotateY(360deg) rotateZ(360deg)}}
-.hero-wrap{position:relative;perspective:1200px;z-index:3;text-align:center}
-.hero-inner{transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s var(--ease);transform-style:preserve-3d}
-.hero-inner.tilting{transition:transform .1s}
-.eyebrow{letter-spacing:.7em;font-size:15px;color:var(--gold);padding-left:.7em;margin-bottom:10px}
-.eyebrow b{display:inline-block;animation:hop 1.4s ease-in-out infinite}
-.title{font-size:clamp(76px,12.5vw,210px);font-weight:900;line-height:1.1;letter-spacing:.03em;display:flex;justify-content:center;
-  filter:drop-shadow(0 14px 44px rgba(255,93,115,.5));transform:translateZ(80px)}
-.title i{display:inline-block;font-style:normal;background:linear-gradient(100deg,#ffe29a,#ff9a5b,#ff5d73,#ff7eb3,#ffd98a,#ffe29a);background-size:300% 100%;
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:bob 2.1s ease-in-out infinite,flow 5s linear infinite;animation-delay:calc(var(--i)*.18s),calc(var(--i)*-.5s)}
-@keyframes bob{0%,100%{transform:translateY(0) rotate(-2.5deg)}50%{transform:translateY(-.16em) rotate(2.5deg) scale(1.05)}}
-.lead{font-size:clamp(22px,2.3vw,36px);font-weight:600;letter-spacing:.08em;margin-top:26px;line-height:1.9;transform:translateZ(40px)}
-.woof i{display:inline-block;font-style:normal;color:var(--gold);text-shadow:0 0 18px rgba(255,200,100,.7);animation:hop 1s ease-in-out infinite;animation-delay:calc(var(--i)*.13s)}
-@keyframes hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-.45em) scale(1.2)}55%{transform:translateY(0) scaleY(.85)}}
-.shine{background:linear-gradient(100deg,#fff 0,#ffd98a 25%,#ff7eb3 50%,#ffd98a 75%,#fff 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 3.5s linear infinite;font-weight:800;position:relative}
-.shine::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--coral),transparent);animation:underline 2.4s ease-in-out infinite}
-@keyframes underline{50%{transform:scaleX(.5);opacity:.5}}
-.hl i{display:inline-block;font-style:normal;color:#fff;text-shadow:0 0 22px var(--rose),0 0 4px var(--rose);animation:hop 1.6s ease-in-out infinite;animation-delay:calc(var(--i)*.1s)}
-.pop{display:inline-block;margin-left:6px;animation:popE 1.8s ease-in-out infinite}
-@keyframes popE{0%,100%{transform:scale(1) rotate(0)}30%{transform:scale(1.5) rotate(-15deg)}60%{transform:scale(1.2) rotate(12deg)}}
-.counter{display:flex;gap:18px;justify-content:center;margin-top:46px;transform:translateZ(30px)}
-.c-box{min-width:112px;padding:16px 10px 12px;border-radius:18px;background:var(--glass);border:1px solid rgba(255,214,160,.28);backdrop-filter:blur(14px);box-shadow:0 18px 40px rgba(0,0,0,.3);transition:transform .5s var(--ease)}
-.c-box:hover{transform:translateY(-8px) rotateX(10deg)}
-.c-box b{display:block;font-size:42px;font-variant-numeric:tabular-nums;background:linear-gradient(180deg,#fff2c9,#ffa75e);-webkit-background-clip:text;background-clip:text;color:transparent}
-.c-box span{font-size:13px;letter-spacing:.4em;color:var(--gold);padding-left:.4em}
-.counter-cap{margin-top:16px;font-size:14px;letter-spacing:.3em;opacity:.7}
-.cue{position:absolute;bottom:34px;left:50%;margin-left:-14px;width:28px;height:46px;border:2px solid rgba(255,214,160,.6);border-radius:16px;z-index:3}
-.cue::after{content:"";position:absolute;left:50%;top:8px;width:4px;height:9px;margin-left:-2px;border-radius:2px;background:var(--gold);animation:wheel 1.6s ease-in-out infinite}
-@keyframes wheel{0%{opacity:1}100%{transform:translateY(18px);opacity:0}}
-.float{position:absolute;pointer-events:none;z-index:2}
-.float span{display:block;animation:floaty 6s ease-in-out infinite;animation-delay:var(--d,0s);text-shadow:0 0 20px rgba(255,170,100,.8)}
-@keyframes floaty{50%{transform:translateY(-26px) rotate(12deg)}}
+    html {
+      scroll-behavior: smooth
+    }
 
-/* ---- 祝福卡片 ---- */
-#card{overflow:clip}
-.bg-word{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:clamp(120px,19vw,330px);font-weight:900;letter-spacing:.05em;white-space:nowrap;
-  color:transparent;-webkit-text-stroke:2px rgba(255,200,120,.12);pointer-events:none;z-index:1}
-.card-scene{position:relative;z-index:3;perspective:1600px;width:min(900px,86vw)}
-.card3d{position:relative;transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .7s var(--ease)}
-.card3d.tilting{transition:transform .1s}
-.paper{position:relative;border-radius:22px;padding:56px 70px 50px;color:#5a2a22;
-  background:linear-gradient(135deg,#fff7e8 0%,#ffe9cf 55%,#ffd9b8 100%);
-  box-shadow:0 50px 90px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.4) inset,0 0 80px rgba(255,150,90,.25);transform-style:preserve-3d}
-.paper::before{content:"";position:absolute;inset:14px;border-radius:14px;border:1.5px solid transparent;pointer-events:none;
-  background:linear-gradient(135deg,#ff8a5b,#ffd37a,#ff5d73) border-box;-webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
-.back{position:absolute;inset:0;border-radius:22px}
-.back.b1{background:#ffcfa6;transform:translateZ(-40px) rotate(-2.2deg);box-shadow:0 30px 60px rgba(0,0,0,.4)}
-.back.b2{background:#ff9d84;transform:translateZ(-80px) rotate(2.6deg)}
-.corner{position:absolute;font-size:26px;color:#e0803f;transform:translateZ(30px)}
-.corner.tl{left:30px;top:26px}.corner.tr{right:30px;top:26px;transform:translateZ(30px) scaleX(-1)}
-.corner.bl{left:30px;bottom:26px;transform:translateZ(30px) scaleY(-1)}.corner.br{right:30px;bottom:26px;transform:translateZ(30px) scale(-1)}
-.card-title{text-align:center;font-size:clamp(34px,3.6vw,52px);font-weight:900;letter-spacing:.2em;padding-left:.2em;transform:translateZ(70px);
-  background:linear-gradient(100deg,#ff5d73,#ff8a5b,#e0a030,#ff5d73);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 6s linear infinite}
-.divider{display:flex;align-items:center;gap:16px;margin:18px auto 26px;width:60%;color:#ff5d73;transform:translateZ(40px)}
-.divider::before,.divider::after{content:"";flex:1;height:1.5px;background:linear-gradient(90deg,transparent,#e8a060,transparent)}
-.divider span{animation:beat 1.2s ease-in-out infinite}
-.card-body{font-family:"STKaiti","KaiTi","楷体","Songti SC",serif;font-size:clamp(17px,1.35vw,21px);line-height:2.05;text-indent:2em;transform:translateZ(30px)}
-.card-body p{margin-bottom:10px;opacity:0;transform:translateY(24px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
-.in .card-body p{opacity:1;transform:none}
-.in .card-body p:nth-child(1){transition-delay:.5s}.in .card-body p:nth-child(2){transition-delay:1.1s}.in .card-body p:nth-child(3){transition-delay:1.7s}
-.card-body mark{background:none;color:#d9364f;font-weight:700;background:linear-gradient(transparent 62%,rgba(255,170,100,.45) 0) no-repeat;background-size:0 100%;animation:mk 1.2s 2.2s var(--ease) forwards}
-@keyframes mk{to{background-size:100% 100%}}
-.sign{text-align:right;margin-top:20px;font-family:"STKaiti","KaiTi",serif;font-size:24px;transform:translateZ(60px)}
-.sign b{display:inline-block;font-size:30px;margin:0 4px;color:#d9364f;animation:bobS 2.4s ease-in-out infinite}
-@keyframes bobS{50%{transform:translateY(-6px) rotate(-3deg)}}
-.stamp{position:absolute;right:-26px;top:-30px;width:86px;height:86px;border-radius:50%;display:grid;place-items:center;font-size:40px;color:#ffe3a1;transform:translateZ(120px) rotate(14deg);
-  background:radial-gradient(circle at 35% 30%,#ff7a8a,#c22a45);box-shadow:0 14px 26px rgba(0,0,0,.45),inset 0 -5px 10px rgba(80,0,20,.5);animation:stampF 3s ease-in-out infinite}
-@keyframes stampF{50%{transform:translateZ(140px) rotate(8deg) translateY(-8px)}}
+    body {
+      font-family: var(--font-cn);
+      color: var(--cream);
+      overflow: hidden;
+      background: radial-gradient(120% 80% at 50% 0%, #4b1526 0%, #2a0b16 45%, #16070c 100%) fixed;
+      -webkit-font-smoothing: antialiased;
+    }
 
-/* ---- 回忆轮播 ---- */
-#gallery{flex-direction:column;overflow:clip}
-.g-stage{position:relative;width:100%;height:560px;perspective:2000px;cursor:grab;user-select:none}
-.g-stage:active{cursor:grabbing}
-.g-tilt{position:absolute;inset:0;transform-style:preserve-3d;transform:translateZ(-300px) rotateX(-7deg)}
-.ring{position:absolute;left:50%;top:50%;transform-style:preserve-3d}
-.g-item{position:absolute;left:-140px;top:-190px;width:280px;height:380px;transform-style:preserve-3d}
-.g-in{position:relative;width:100%;height:100%;border-radius:18px;overflow:hidden;border:1px solid rgba(255,214,160,.45);
-  transform:translateZ(var(--lift,0px)) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--sc,1));
-  filter:brightness(calc(.4 + .6*var(--d,1)));opacity:calc(.35 + .65*var(--d,1));
-  transition:transform .5s var(--ease),box-shadow .5s,border-color .4s;box-shadow:0 20px 50px rgba(0,0,0,.5)}
-.g-in.tilting{transition:transform .1s,box-shadow .5s}
-.g-in:hover{--lift:90px;--sc:1.1;border-color:#ffd98a;box-shadow:0 40px 80px rgba(0,0,0,.6),0 0 70px rgba(255,150,90,.65);z-index:5}
-.g-in img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.1s var(--ease),filter .6s;pointer-events:none}
-.g-in:hover img{transform:scale(1.18) translate(calc((var(--ry,0deg))*-.4),calc((var(--rx,0deg))*.4))}
-.g-in::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(30,6,10,.88));pointer-events:none}
-.g-in::before{content:"";position:absolute;inset:-60%;z-index:2;background:conic-gradient(from 0deg,transparent 0 70%,rgba(255,220,150,.55) 85%,transparent);opacity:0;animation:spin 3s linear infinite;pointer-events:none;mix-blend-mode:overlay;transition:opacity .5s}
-.g-in:hover::before{opacity:1}
-.g-cap{position:absolute;left:0;right:0;bottom:0;padding:18px 18px 16px;z-index:3;transform:translateY(34px);transition:transform .6s var(--ease)}
-.g-in:hover .g-cap,.g-item.front .g-cap{transform:none}
-.g-cap em{font-style:normal;font-size:12px;letter-spacing:.3em;color:var(--gold)}
-.g-cap b{display:block;font-size:22px;letter-spacing:.12em;margin:2px 0}
-.g-cap span{font-size:13px;opacity:0;transition:opacity .6s .1s;display:block}
-.g-in:hover .g-cap span,.g-item.front .g-cap span{opacity:.85}
-.g-item.front .g-in{border-color:#ffd98a;box-shadow:0 30px 70px rgba(0,0,0,.55),0 0 60px rgba(255,170,100,.45)}
-.g-glare{z-index:4}
-.g-floor{position:absolute;left:50%;top:78%;width:1100px;height:1100px;margin:-550px;border-radius:50%;transform:rotateX(80deg);pointer-events:none;
-  background:radial-gradient(circle,rgba(255,170,100,.35) 0,rgba(255,138,91,.12) 38%,transparent 62%)}
-.g-ui{display:flex;align-items:center;gap:30px;margin-top:6px;z-index:5}
-.g-btn{width:58px;height:58px;border-radius:50%;border:1px solid rgba(255,214,160,.5);background:var(--glass);color:var(--gold);font-size:22px;cursor:pointer;backdrop-filter:blur(10px);transition:.4s var(--ease)}
-.g-btn:hover{background:var(--gold);color:var(--ink);transform:scale(1.15);box-shadow:0 0 30px var(--gold)}
-.g-now{min-width:220px;text-align:center}
-.g-now b{display:block;font-size:26px;letter-spacing:.2em}.g-now span{font-size:13px;letter-spacing:.3em;color:var(--gold)}
-.g-hint{margin-top:14px;font-size:13px;letter-spacing:.3em;opacity:.55}
-#lb{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;background:rgba(20,4,8,.85);backdrop-filter:blur(16px);opacity:0;pointer-events:none;transition:opacity .5s}
-#lb.on{opacity:1;pointer-events:auto}
-#lb figure{text-align:center;transform:scale(.7) rotateY(60deg);transition:transform .8s var(--ease)}
-#lb.on figure{transform:none}
-#lb img{max-height:78vh;max-width:80vw;border-radius:20px;box-shadow:0 0 100px rgba(255,150,90,.5);border:1px solid var(--gold)}
-#lb figcaption{margin-top:16px;letter-spacing:.2em;font-size:18px}
+    body.entered {
+      overflow-x: hidden;
+      overflow-y: auto
+    }
 
-/* ---- 时光 ---- */
-#timeline{display:block;padding:0;min-height:0}
-.t-head{min-height:62vh;display:flex;align-items:center;justify-content:center;flex-direction:column}
-.tl{position:relative}
-.tl-line{position:absolute;left:50%;top:0;bottom:0;width:4px;margin-left:-2px;border-radius:4px;background:rgba(255,214,160,.14)}
-.tl-fill{position:absolute;left:0;top:0;width:100%;height:0;border-radius:4px;background:linear-gradient(180deg,#ffe29a,#ff8a5b,#ff5d73);box-shadow:0 0 18px var(--coral),0 0 40px rgba(255,93,115,.5)}
-.tl-fill::after{content:"";position:absolute;left:50%;bottom:-9px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:#fff;box-shadow:0 0 18px 6px #ffc86b,0 0 50px 14px rgba(255,93,115,.7)}
-.t-item{position:relative;height:100vh;display:flex;align-items:center;perspective:1400px}
-.t-item.left{justify-content:flex-start;padding-left:7vw}.t-item.right{justify-content:flex-end;padding-right:7vw}
-.t-side{width:41%}
-.t-node{position:absolute;left:50%;top:50%;width:78px;height:78px;margin:-39px;border-radius:50%;display:grid;place-items:center;font-size:34px;z-index:3;
-  background:radial-gradient(circle at 35% 30%,#4a1a22,#2a0d12);border:2px solid rgba(255,214,160,.3);transform:scale(.6);transition:.8s var(--ease)}
-.t-item.on .t-node{transform:scale(1);border-color:var(--gold);box-shadow:0 0 30px var(--gold),0 0 70px rgba(255,138,91,.6);background:radial-gradient(circle at 35% 30%,#ff9a5b,#c22a45)}
-.t-item.on .t-node::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--gold);animation:ripple 2.2s ease-out infinite}
-@keyframes ripple{to{transform:scale(2);opacity:0}}
-.t-year{position:absolute;top:50%;margin-top:-.55em;font-size:clamp(120px,17vw,280px);font-weight:900;line-height:1;color:transparent;-webkit-text-stroke:2px rgba(255,200,120,.18);pointer-events:none;white-space:nowrap}
-.t-item.left .t-year{right:5vw}.t-item.right .t-year{left:5vw}
-.t-card{position:relative;padding:36px 40px 34px;border-radius:24px;background:var(--glass);border:1px solid rgba(255,214,160,.32);backdrop-filter:blur(18px);
-  box-shadow:0 30px 70px rgba(0,0,0,.4);transform:perspective(1000px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .6s var(--ease),box-shadow .5s;overflow:hidden}
-.t-card.tilting{transition:transform .1s,box-shadow .5s;box-shadow:0 40px 90px rgba(0,0,0,.5),0 0 60px rgba(255,138,91,.35)}
-.t-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--gold),var(--rose))}
-.t-date{display:inline-block;padding:6px 16px;border-radius:30px;font-size:14px;letter-spacing:.2em;color:var(--ink);font-weight:700;background:linear-gradient(100deg,#ffe29a,#ff9a5b)}
-.t-card h3{font-size:34px;letter-spacing:.14em;margin:16px 0 12px}
-.t-card p{font-size:18px;line-height:1.95;opacity:.92}
-.t-no{position:absolute;right:24px;top:10px;font-size:60px;font-weight:900;color:rgba(255,214,160,.14)}
-.t-item.final .t-card{border-color:var(--gold);box-shadow:0 0 80px rgba(255,138,91,.4)}
-.t-item.final .t-card h3{font-size:42px}
-.foot{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:clip}
-.heart3d{position:relative;width:200px;height:200px;margin-bottom:50px;transform-style:preserve-3d;animation:hs 6s linear infinite}
-.heart3d span{position:absolute;inset:0;display:grid;place-items:center;font-size:200px;line-height:1}
-@keyframes hs{to{transform:rotateY(360deg)}}
-.foot h2{font-size:clamp(44px,6vw,96px);font-weight:900;letter-spacing:.1em}
-.foot p{margin-top:18px;font-size:20px;letter-spacing:.2em;opacity:.85}
-.fire-btn{margin-top:40px;padding:18px 48px;border:none;border-radius:60px;font-size:18px;letter-spacing:.3em;font-weight:700;color:var(--ink);cursor:pointer;
-  background:linear-gradient(100deg,#ffe29a,#ff8a5b,#ff5d73);background-size:200% 100%;box-shadow:0 0 40px rgba(255,138,91,.6);transition:.4s var(--ease)}
-.fire-btn:hover{transform:translateY(-6px) scale(1.07);background-position:100% 0;box-shadow:0 0 70px rgba(255,93,115,.9)}
-.copy{position:absolute;bottom:30px;font-size:13px;letter-spacing:.3em;opacity:.45}
-</style>
+    ::-webkit-scrollbar {
+      width: 8px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #16070c
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(var(--rose), var(--gold));
+      border-radius: 8px
+    }
+
+    #bgCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none
+    }
+
+    #fxCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(10, 2, 5, .55) 100%)
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 1.4s ease
+    }
+
+    body.entered main {
+      opacity: 1
+    }
+
+    /* 通用动画 */
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    @keyframes gradShift {
+      0% {
+        background-position: 0% 50%
+      }
+
+      50% {
+        background-position: 100% 50%
+      }
+
+      100% {
+        background-position: 0% 50%
+      }
+    }
+
+    @keyframes angSpin {
+      to {
+        --ang: 360deg
+      }
+    }
+
+    @keyframes floaty {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-10px)
+      }
+    }
+
+    @keyframes twinkle {
+
+      0%,
+      100% {
+        opacity: .2;
+        transform: scale(.6)
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.2)
+      }
+    }
+
+    /* ================== 初始界面 ================== */
+    #intro {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 50%, rgba(130, 35, 62, .55) 0%, rgba(40, 10, 20, .25) 55%, transparent 80%);
+      transition: opacity 1.3s ease, visibility 1.3s;
+      overflow: hidden;
+    }
+
+    #intro.leave {
+      opacity: 0;
+      visibility: hidden
+    }
+
+    .intro-rays {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 170vmax;
+      height: 170vmax;
+      margin: -85vmax 0 0 -85vmax;
+      background: repeating-conic-gradient(from 0deg, rgba(255, 200, 140, .08) 0deg 5deg, transparent 5deg 15deg);
+      -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 50%);
+      mask-image: radial-gradient(circle, #000 0%, transparent 50%);
+      animation: spin 90s linear infinite;
+      pointer-events: none;
+    }
+
+    .intro-glow {
+      position: absolute;
+      width: 680px;
+      height: 680px;
+      border-radius: 50%;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(255, 140, 120, .42), rgba(255, 111, 145, .14) 40%, transparent 70%);
+      filter: blur(20px);
+      animation: glowPulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: .85
+      }
+
+      30% {
+        transform: scale(1.12);
+        opacity: 1
+      }
+    }
+
+    .intro-orbits {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 1100px;
+      pointer-events: none
+    }
+
+    .i-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 205, 150, .22)
+    }
+
+    .i-ring::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 18px 6px rgba(255, 200, 120, .75)
+    }
+
+    .i-ring.a {
+      width: 720px;
+      height: 720px;
+      animation: iringA 14s linear infinite
+    }
+
+    .i-ring.b {
+      width: 860px;
+      height: 860px;
+      border-color: rgba(255, 111, 145, .18);
+      animation: iringB 20s linear infinite
+    }
+
+    @keyframes iringA {
+      from {
+        transform: rotateX(74deg) rotateZ(0)
+      }
+
+      to {
+        transform: rotateX(74deg) rotateZ(360deg)
+      }
+    }
+
+    @keyframes iringB {
+      from {
+        transform: rotateX(70deg) rotateY(12deg) rotateZ(360deg)
+      }
+
+      to {
+        transform: rotateX(70deg) rotateY(12deg) rotateZ(0)
+      }
+    }
+
+    .spk {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fff3d6;
+      box-shadow: 0 0 12px 3px rgba(255, 210, 150, .8);
+      animation: twinkle 2.4s ease-in-out infinite
+    }
+
+    .intro-head {
+      position: relative;
+      text-align: center;
+      margin-bottom: 64px;
+      transition: opacity .8s, transform .8s
+    }
+
+    .intro-eyebrow {
+      font-size: 13px;
+      letter-spacing: .6em;
+      color: var(--gold);
+      opacity: .85
+    }
+
+    .intro-title {
+      margin-top: 14px;
+      font-family: var(--font-hand);
+      font-weight: 400;
+      font-size: 26px;
+      letter-spacing: .3em;
+      color: #ffe9dc
+    }
+
+    .intro-title em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--gold), var(--rose), var(--gold));
+      background-size: 200%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradShift 3s ease infinite
+    }
+
+    .intro-tip {
+      position: relative;
+      margin-top: 96px;
+      font-size: 15px;
+      letter-spacing: .5em;
+      color: rgba(255, 231, 200, .75);
+      transition: opacity .8s;
+      animation: tipBreath 2.2s ease-in-out infinite
+    }
+
+    @keyframes tipBreath {
+
+      0%,
+      100% {
+        opacity: .45
+      }
+
+      50% {
+        opacity: 1
+      }
+    }
+
+    .envelope-stage {
+      position: relative;
+      perspective: 1400px;
+      transition: transform 1.4s cubic-bezier(.6, 0, .3, 1), opacity 1.1s ease
+    }
+
+    .env-away .envelope-stage {
+      transform: translateY(240px) scale(.8);
+      opacity: 0
+    }
+
+    .env-shadow {
+      position: absolute;
+      left: 50%;
+      bottom: -70px;
+      width: 380px;
+      height: 44px;
+      margin-left: -190px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(0, 0, 0, .6), transparent 70%);
+      animation: shadowBounce 2.2s ease-in-out infinite
+    }
+
+    @keyframes shadowBounce {
+
+      0%,
+      15%,
+      65%,
+      100% {
+        transform: scale(1);
+        opacity: .7
+      }
+
+      30% {
+        transform: scale(.6);
+        opacity: .3
+      }
+
+      45% {
+        transform: scale(1.05);
+        opacity: .75
+      }
+
+      55% {
+        transform: scale(.85);
+        opacity: .55
+      }
+    }
+
+    .envelope-wrap {
+      position: relative;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      animation: envBounce 2.2s ease-in-out infinite
+    }
+
+    @keyframes envBounce {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(-2deg) scale(1)
+      }
+
+      15% {
+        transform: translateY(0) rotate(-1deg) scale(1.06, .94)
+      }
+
+      30% {
+        transform: translateY(-48px) rotate(3deg) scale(.98, 1.03)
+      }
+
+      45% {
+        transform: translateY(0) rotate(0) scale(1.04, .96)
+      }
+
+      55% {
+        transform: translateY(-14px) rotate(-1deg) scale(1)
+      }
+
+      65% {
+        transform: translateY(0) rotate(-2deg) scale(1)
+      }
+    }
+
+    .envelope {
+      position: relative;
+      width: 440px;
+      height: 290px;
+      transform-style: preserve-3d;
+      transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--s, 1));
+      transition: transform .35s ease-out;
+    }
+
+    .envelope-wrap:hover .envelope {
+      --s: 1.05
+    }
+
+    .env-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      background: linear-gradient(160deg, #a8264a, #7a1430);
+      box-shadow: 0 40px 90px rgba(0, 0, 0, .55), 0 0 80px rgba(255, 111, 145, .25)
+    }
+
+    .letter {
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      top: 16px;
+      height: 250px;
+      border-radius: 8px;
+      background: linear-gradient(#fffaf1, #ffeedd);
+      box-shadow: 0 -6px 20px rgba(0, 0, 0, .15);
+      transform: translateZ(1px);
+      transition: transform 1.3s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .letter-inner {
+      position: absolute;
+      inset: 12px;
+      border: 1px dashed rgba(200, 110, 100, .4);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #a8324f;
+      font-family: var(--font-hand)
+    }
+
+    .letter-inner small {
+      font-size: 13px;
+      letter-spacing: .2em;
+      color: #c0586c
+    }
+
+    .letter-inner b {
+      font-size: 30px;
+      font-weight: 400;
+      letter-spacing: .2em
+    }
+
+    .letter-up .letter {
+      transform: translateZ(1px) translateY(-165px)
+    }
+
+    .env-front {
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      overflow: hidden;
+      transform: translateZ(2px)
+    }
+
+    .env-front i {
+      position: absolute;
+      inset: 0
+    }
+
+    .env-l {
+      clip-path: polygon(0 0, 0 100%, 52% 56%);
+      background: linear-gradient(90deg, #b8264a, #d6406a)
+    }
+
+    .env-r {
+      clip-path: polygon(100% 0, 100% 100%, 48% 56%);
+      background: linear-gradient(270deg, #b8264a, #d6406a)
+    }
+
+    .env-b {
+      clip-path: polygon(0 100%, 100% 100%, 50% 44%);
+      background: linear-gradient(0deg, #c22d52, #e65a80)
+    }
+
+    .env-flap {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 60%;
+      transform-origin: 50% 0;
+      transform-style: preserve-3d;
+      transform: translateZ(3px) rotateX(0deg);
+      transition: transform 1s cubic-bezier(.6, -.05, .3, 1) .25s
+    }
+
+    .env-flap i {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden
+    }
+
+    .flap-face {
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      background: linear-gradient(180deg, #e85278, #b52448);
+      border-radius: 14px 14px 0 0
+    }
+
+    .flap-back {
+      clip-path: polygon(0 100%, 100% 100%, 50% 0);
+      background: linear-gradient(0deg, #8f1a37, #b1294d);
+      transform: rotateX(180deg)
+    }
+
+    .opening .env-flap {
+      transform: translateZ(.5px) rotateX(180deg)
+    }
+
+    .env-seal {
+      position: absolute;
+      left: 50%;
+      top: 60%;
+      width: 68px;
+      height: 68px;
+      margin: -34px 0 0 -34px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff0b8, #f0b44a 50%, #a8661a);
+      box-shadow: 0 8px 18px rgba(80, 10, 20, .55), inset 0 -4px 8px rgba(0, 0, 0, .25), inset 0 4px 6px rgba(255, 255, 255, .6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8a1530;
+      font-size: 30px;
+      transform: translateZ(5px);
+      animation: sealPulse 2.2s ease-in-out infinite;
+      transition: transform .6s, opacity .5s;
+    }
+
+    .env-seal::after {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 215, 140, .6);
+      animation: sealRing 2.2s ease-out infinite
+    }
+
+    @keyframes sealPulse {
+
+      0%,
+      100% {
+        transform: translateZ(5px) scale(1)
+      }
+
+      30% {
+        transform: translateZ(5px) scale(1.1)
+      }
+    }
+
+    @keyframes sealRing {
+      0% {
+        transform: scale(.9);
+        opacity: .9
+      }
+
+      100% {
+        transform: scale(1.7);
+        opacity: 0
+      }
+    }
+
+    .opening .env-seal {
+      animation: none;
+      transform: translateZ(40px) scale(1.8) rotate(25deg);
+      opacity: 0
+    }
+
+    .env-title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 44px;
+      text-align: center;
+      transform: translateZ(6px);
+      font-family: var(--font-hand);
+      font-size: 36px;
+      letter-spacing: .45em;
+      padding-left: .45em;
+      background: linear-gradient(90deg, #ffe7b8, #ffffff, #ffcf70, #ffe7b8);
+      background-size: 300%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradShift 3s ease infinite;
+      filter: drop-shadow(0 2px 2px rgba(90, 10, 30, .5))
+    }
+
+    .env-meta {
+      position: absolute;
+      left: 26px;
+      right: 26px;
+      bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      transform: translateZ(6px);
+      font-size: 11px;
+      letter-spacing: .2em;
+      color: rgba(255, 226, 200, .75)
+    }
+
+    .envelope::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      box-shadow: inset 0 0 0 1.5px rgba(255, 215, 150, .55);
+      transform: translateZ(7px);
+      pointer-events: none
+    }
+
+    .opening .intro-head {
+      opacity: 0;
+      transform: translateY(-30px)
+    }
+
+    .opening .intro-tip {
+      opacity: 0;
+      animation: none
+    }
+
+    .opening .env-shadow {
+      animation: none;
+      opacity: .4
+    }
+
+    /* 信纸 */
+    #paper {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: 680px;
+      height: 434px;
+      z-index: 60;
+      border-radius: 12px;
+      padding: 44px 64px;
+      background: radial-gradient(circle at 20% 10%, #fffdf8, #fff3e4 60%, #ffe6d2);
+      color: #6e2a36;
+      text-align: center;
+      box-shadow: 0 40px 120px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 210, 170, .6), 0 0 140px rgba(255, 150, 120, .3);
+      font-family: var(--font-hand);
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, -50%);
+    }
+
+    #paper.show {
+      opacity: 1;
+      visibility: visible
+    }
+
+    #paper::before {
+      content: '';
+      position: absolute;
+      inset: 14px;
+      border: 1px solid rgba(190, 110, 100, .3);
+      border-radius: 8px;
+      pointer-events: none
+    }
+
+    .paper-corner {
+      position: absolute;
+      font-size: 20px;
+      color: #e0889a
+    }
+
+    .paper-corner.tl {
+      left: 24px;
+      top: 20px
+    }
+
+    .paper-corner.br {
+      right: 24px;
+      bottom: 18px
+    }
+
+    .pl {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity .9s ease, transform .9s cubic-bezier(.2, .8, .2, 1);
+      transition-delay: var(--d, 0s)
+    }
+
+    .content-in .pl {
+      opacity: 1;
+      transform: none
+    }
+
+    .p-to {
+      text-align: left;
+      font-size: 20px;
+      color: #9b3a4c
+    }
+
+    .p-title {
+      font-size: 48px;
+      font-weight: 400;
+      letter-spacing: .2em;
+      margin: 4px 0 10px;
+      background: linear-gradient(90deg, #e0466d, #ff8a6b, #e8a23a);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent
+    }
+
+    .p-line {
+      font-size: 19px;
+      line-height: 1.9
+    }
+
+    .p-sign {
+      text-align: right;
+      font-size: 18px;
+      margin-top: 6px;
+      color: #9b3a4c
+    }
+
+    .p-btn {
+      margin-top: 14px;
+      padding: 12px 36px;
+      border: none;
+      border-radius: 999px;
+      font-size: 15px;
+      letter-spacing: .25em;
+      color: #fff;
+      cursor: pointer;
+      background: linear-gradient(90deg, #ff6f91, #ff9671, #ffc75f, #ff6f91);
+      background-size: 300%;
+      font-family: var(--font-cn);
+      box-shadow: 0 10px 30px rgba(255, 111, 145, .45);
+      animation: gradShift 3s ease infinite;
+      transition: transform .3s, box-shadow .3s
+    }
+
+    .p-btn:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 16px 40px rgba(255, 111, 145, .6)
+    }
+
+    /* ================== 全局 UI ================== */
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      z-index: 30;
+      transform-origin: left;
+      transform: scaleX(0);
+      background: linear-gradient(90deg, var(--rose), var(--peach), var(--gold));
+      box-shadow: 0 0 12px rgba(255, 150, 120, .8)
+    }
+
+    .side-nav {
+      position: fixed;
+      right: 34px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      opacity: 0;
+      transition: opacity 1s 1s
+    }
+
+    body.entered .side-nav {
+      opacity: 1
+    }
+
+    .side-nav a {
+      position: relative;
+      display: block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 210, 170, .6);
+      transition: .4s;
+      cursor: pointer
+    }
+
+    .side-nav a span {
+      position: absolute;
+      right: 26px;
+      top: 50%;
+      transform: translate(8px, -50%);
+      white-space: nowrap;
+      font-size: 13px;
+      letter-spacing: .2em;
+      color: var(--champagne);
+      opacity: 0;
+      transition: .35s;
+      pointer-events: none
+    }
+
+    .side-nav a:hover span,
+    .side-nav a.active span {
+      opacity: 1;
+      transform: translate(0, -50%)
+    }
+
+    .side-nav a.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      transform: scale(1.3);
+      box-shadow: 0 0 14px var(--gold)
+    }
+
+    .music-btn {
+      position: fixed;
+      top: 26px;
+      right: 28px;
+      z-index: 20;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background: repeating-radial-gradient(circle, #2a0d15 0 2px, #3d1621 2px 4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px rgba(255, 207, 112, .5), 0 10px 30px rgba(0, 0, 0, .5);
+      opacity: 0;
+      transition: opacity 1s 1s
+    }
+
+    body.entered .music-btn {
+      opacity: 1
+    }
+
+    .music-btn::before {
+      content: '♪';
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--rose), var(--gold));
+      color: #fff;
+      font-size: 13px;
+      line-height: 24px;
+      text-align: center
+    }
+
+    .music-btn.playing {
+      animation: spin 4s linear infinite
+    }
+
+    .music-btn.playing::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 207, 112, .6);
+      animation: sealRing 1.8s ease-out infinite
+    }
+
+    /* ================== 通用区块 ================== */
+    .panel {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 6vw;
+      overflow: hidden
+    }
+
+    .par-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none
+    }
+
+    .sec-head {
+      text-align: center;
+      position: relative;
+      z-index: 3
+    }
+
+    .sec-head .en {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+      letter-spacing: .55em;
+      color: var(--gold)
+    }
+
+    .sec-head .en::before,
+    .sec-head .en::after {
+      content: '';
+      width: 46px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent)
+    }
+
+    .sec-head h2 {
+      margin-top: 12px;
+      font-size: clamp(36px, 4vw, 56px);
+      font-weight: 800;
+      letter-spacing: .14em;
+      background: linear-gradient(90deg, var(--champagne), var(--peach), var(--rose), var(--peach), var(--champagne));
+      background-size: 300%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradShift 6s ease infinite
+    }
+
+    .sec-sub {
+      margin-top: 10px;
+      font-size: 15px;
+      letter-spacing: .3em;
+      color: rgba(255, 230, 210, .6)
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 1s ease, transform 1.1s cubic-bezier(.2, .8, .2, 1);
+      transition-delay: var(--rd, 0s)
+    }
+
+    .in-view .reveal {
+      opacity: 1;
+      transform: none
+    }
+
+    /* ================== 1. 标题页 ================== */
+    .big2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 82vh;
+      font-weight: 900;
+      line-height: 1;
+      color: transparent;
+      -webkit-text-stroke: 2px rgba(255, 190, 140, .09);
+      user-select: none
+    }
+
+    .orbits {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 1200px
+    }
+
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 200, 140, .16)
+    }
+
+    .ring::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 20px 6px rgba(255, 200, 120, .8)
+    }
+
+    .ring.r1 {
+      width: 820px;
+      height: 820px;
+      animation: ring1 22s linear infinite
+    }
+
+    .ring.r2 {
+      width: 1040px;
+      height: 1040px;
+      border-color: rgba(255, 111, 145, .14);
+      animation: ring2 32s linear infinite
+    }
+
+    .ring.r3 {
+      width: 640px;
+      height: 640px;
+      border-style: dashed;
+      border-color: rgba(255, 220, 180, .14);
+      animation: ring3 18s linear infinite
+    }
+
+    .ring.r2::before {
+      background: var(--rose);
+      box-shadow: 0 0 20px 6px rgba(255, 111, 145, .8)
+    }
+
+    @keyframes ring1 {
+      from {
+        transform: rotateX(74deg) rotateZ(0)
+      }
+
+      to {
+        transform: rotateX(74deg) rotateZ(360deg)
+      }
+    }
+
+    @keyframes ring2 {
+      from {
+        transform: rotateX(66deg) rotateY(16deg) rotateZ(360deg)
+      }
+
+      to {
+        transform: rotateX(66deg) rotateY(16deg) rotateZ(0)
+      }
+    }
+
+    @keyframes ring3 {
+      from {
+        transform: rotateX(78deg) rotateY(-20deg) rotateZ(0)
+      }
+
+      to {
+        transform: rotateX(78deg) rotateY(-20deg) rotateZ(360deg)
+      }
+    }
+
+    .fh-wrap {
+      position: absolute;
+      left: var(--x);
+      top: var(--y)
+    }
+
+    .fh {
+      display: inline-block;
+      font-size: var(--s);
+      background: linear-gradient(135deg, #ffd9a0, #ff6f91);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 8px 20px rgba(255, 111, 145, .45));
+      animation: fhFloat 7s ease-in-out infinite;
+      animation-delay: var(--d)
+    }
+
+    @keyframes fhFloat {
+      0% {
+        transform: translateY(0) rotateY(0)
+      }
+
+      50% {
+        transform: translateY(-34px) rotateY(180deg)
+      }
+
+      100% {
+        transform: translateY(0) rotateY(360deg)
+      }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 3;
+      text-align: center
+    }
+
+    .eyebrow {
+      font-size: 14px;
+      letter-spacing: .55em;
+      color: var(--gold)
+    }
+
+    .rainbow-title {
+      display: flex;
+      justify-content: center;
+      gap: .04em;
+      margin: 26px 0 18px;
+      font-size: clamp(96px, 11vw, 176px);
+      font-weight: 900;
+      line-height: 1.2;
+      perspective: 900px
+    }
+
+    .cw {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(100px) rotateX(-90deg);
+      transition: opacity 1s ease, transform 1.3s cubic-bezier(.2, 1.3, .3, 1);
+      transition-delay: calc(var(--i)*.13s + .3s)
+    }
+
+    .in-view .cw {
+      opacity: 1;
+      transform: none
+    }
+
+    .ch {
+      position: relative;
+      display: inline-block;
+      animation: bob 1.9s ease-in-out infinite;
+      animation-delay: calc(var(--i)*.18s)
+    }
+
+    @keyframes bob {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(0)
+      }
+
+      50% {
+        transform: translateY(-26px) rotate(2deg)
+      }
+    }
+
+    .ch-3d {
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: #6a1d31;
+      text-shadow: 1px 1px 0 #75213a, 2px 2px 0 #812640, 3px 3px 0 #8c2a45, 4px 4px 0 #97304a, 5px 5px 0 #a2344f, 6px 6px 0 #ad3955, 10px 18px 34px rgba(0, 0, 0, .55)
+    }
+
+    .ch-face {
+      position: relative;
+      display: inline-block;
+      background: linear-gradient(120deg, #ffe29a, #ffb38a, #ff6f91, #ff9ec0, #ffc75f, #ffe29a);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradShift 4s ease infinite;
+      animation-delay: calc(var(--i)*-.7s);
+      filter: drop-shadow(0 0 22px rgba(255, 140, 120, .4))
+    }
+
+    .hero-sub {
+      font-size: clamp(22px, 2.2vw, 32px);
+      line-height: 1.9;
+      letter-spacing: .08em;
+      color: #ffe9dc;
+      font-weight: 500
+    }
+
+    .kw-wang span {
+      display: inline-block;
+      color: var(--peach);
+      font-weight: 800;
+      animation: bark 1.3s ease-in-out infinite;
+      animation-delay: calc(var(--i)*.15s)
+    }
+
+    @keyframes bark {
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0) rotate(0) scale(1)
+      }
+
+      20% {
+        transform: translateY(-16px) rotate(-12deg) scale(1.18)
+      }
+
+      40% {
+        transform: translateY(0) rotate(8deg) scale(1)
+      }
+    }
+
+    .paw {
+      display: inline-block;
+      font-size: .7em;
+      animation: pawFade 2.6s ease-in-out infinite
+    }
+
+    @keyframes pawFade {
+
+      0%,
+      100% {
+        opacity: .2;
+        transform: translate(0, 4px) rotate(-10deg)
+      }
+
+      50% {
+        opacity: 1;
+        transform: translate(4px, -6px) rotate(14deg)
+      }
+    }
+
+    .kw-best {
+      position: relative;
+      display: inline-block;
+      font-weight: 800;
+      padding: 0 .1em;
+      background: linear-gradient(90deg, #ffd27f, #ffffff, #ff8fb1, #ffd27f);
+      background-size: 300%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradShift 3s ease infinite
+    }
+
+    .kw-best::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 2px;
+      height: 3px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--rose), var(--gold));
+      transform-origin: left;
+      animation: underline 2.6s ease-in-out infinite
+    }
+
+    @keyframes underline {
+      0% {
+        transform: scaleX(0)
+      }
+
+      45%,
+      70% {
+        transform: scaleX(1)
+      }
+
+      100% {
+        transform: scaleX(0);
+        transform-origin: right
+      }
+    }
+
+    .kw-anni span {
+      display: inline-block;
+      color: var(--gold);
+      font-weight: 800;
+      animation: wave 1.6s ease-in-out infinite;
+      animation-delay: calc(var(--i)*.12s)
+    }
+
+    @keyframes wave {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-12px);
+        text-shadow: 0 12px 22px rgba(255, 200, 120, .65)
+      }
+    }
+
+    .kw-emoji {
+      display: inline-block;
+      margin-left: 6px;
+      animation: party 1.8s ease-in-out infinite
+    }
+
+    @keyframes party {
+
+      0%,
+      100% {
+        transform: rotate(-14deg) scale(1)
+      }
+
+      50% {
+        transform: rotate(14deg) scale(1.3)
+      }
+    }
+
+    .love-clock {
+      display: inline-flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 46px;
+      padding: 16px 34px;
+      border-radius: 999px;
+      background: rgba(255, 220, 200, .06);
+      border: 1px solid rgba(255, 200, 150, .25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .1);
+      font-size: 14px;
+      letter-spacing: .2em;
+      color: rgba(255, 230, 210, .75)
+    }
+
+    .love-clock b {
+      font-family: Georgia, serif;
+      font-size: 30px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .02em;
+      margin-right: 4px;
+      background: linear-gradient(180deg, #fff2d6, var(--gold));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent
+    }
+
+    .love-clock .sep {
+      width: 1px;
+      height: 24px;
+      background: rgba(255, 210, 170, .25)
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 34px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      letter-spacing: .4em;
+      color: rgba(255, 230, 210, .55);
+      z-index: 3
+    }
+
+    .mouse {
+      width: 24px;
+      height: 40px;
+      border: 2px solid rgba(255, 210, 170, .55);
+      border-radius: 14px;
+      position: relative
+    }
+
+    .mouse::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 7px;
+      width: 4px;
+      height: 8px;
+      margin-left: -2px;
+      border-radius: 2px;
+      background: var(--gold);
+      animation: wheel 1.6s ease-in-out infinite
+    }
+
+    @keyframes wheel {
+      0% {
+        opacity: 1;
+        transform: translateY(0)
+      }
+
+      100% {
+        opacity: 0;
+        transform: translateY(14px)
+      }
+    }
+
+    /* ================== 2. 祝福卡片 ================== */
+    .bless-bg {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 30vw;
+      font-weight: 900;
+      color: transparent;
+      -webkit-text-stroke: 2px rgba(255, 170, 140, .07);
+      user-select: none
+    }
+
+    .card-stage {
+      position: relative;
+      z-index: 3;
+      perspective: 1600px
+    }
+
+    .card-flip {
+      opacity: 0;
+      transform: rotateX(30deg) translateY(130px) scale(.9);
+      transition: opacity 1.2s ease, transform 1.5s cubic-bezier(.2, .9, .25, 1);
+      transform-style: preserve-3d
+    }
+
+    .in-view .card-flip {
+      opacity: 1;
+      transform: none
+    }
+
+    .card3d {
+      position: relative;
+      width: min(920px, 86vw);
+      padding: 54px 76px 46px;
+      border-radius: 30px;
+      transform-style: preserve-3d;
+      background: radial-gradient(circle at 15% 0%, #fffdf8, #fff4e7 45%, #ffe7d6);
+      color: #5d2a2e;
+      transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+      box-shadow: 0 60px 120px rgba(0, 0, 0, .5), inset 0 0 60px rgba(255, 180, 140, .22);
+    }
+
+    .card3d::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 33px;
+      padding: 3px;
+      background: conic-gradient(from var(--ang), #ffcf70, #ff6f91, #ffb38a, #fff1c9, #ff8fb1, #ffcf70);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: angSpin 6s linear infinite
+    }
+
+    .card-glow {
+      position: absolute;
+      inset: 30px;
+      border-radius: 30px;
+      background: linear-gradient(120deg, var(--rose), var(--gold));
+      filter: blur(60px);
+      opacity: .5;
+      transform: translateZ(-90px)
+    }
+
+    .card-glare {
+      position: absolute;
+      inset: 0;
+      border-radius: 30px;
+      pointer-events: none;
+      background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgba(255, 255, 255, .55), transparent 45%);
+      mix-blend-mode: soft-light;
+      transform: translateZ(1px)
+    }
+
+    .tape {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      width: 160px;
+      height: 36px;
+      margin-left: -80px;
+      background: rgba(255, 200, 160, .6);
+      transform: translateZ(24px) rotate(-3deg);
+      clip-path: polygon(3% 0, 97% 0, 100% 20%, 97% 40%, 100% 60%, 97% 80%, 100% 100%, 3% 100%, 0 80%, 3% 60%, 0 40%, 3% 20%, 0 0);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, .1)
+    }
+
+    .wax {
+      position: absolute;
+      right: -34px;
+      top: -36px;
+      width: 100px;
+      height: 100px;
+      border-radius: 48% 52% 50% 50%/52% 48% 52% 48%;
+      background: radial-gradient(circle at 35% 30%, #ff7a92, #c4183f 60%, #8a0e2b);
+      transform: translateZ(90px) rotate(-12deg);
+      box-shadow: 0 14px 30px rgba(120, 0, 30, .5), inset 0 -6px 12px rgba(0, 0, 0, .3), inset 0 6px 10px rgba(255, 255, 255, .25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      color: #ffd9de;
+      text-shadow: 0 -1px 0 rgba(0, 0, 0, .3)
+    }
+
+    .stamp {
+      position: absolute;
+      left: -52px;
+      bottom: -52px;
+      width: 136px;
+      height: 136px;
+      transform: translateZ(70px)
+    }
+
+    .stamp svg {
+      width: 100%;
+      height: 100%;
+      animation: spin 20s linear infinite
+    }
+
+    .stamp text {
+      font-size: 11.5px;
+      letter-spacing: 2.6px;
+      fill: #b8325a;
+      font-weight: 700;
+      font-family: Georgia, serif
+    }
+
+    .stamp span {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 62px;
+      height: 62px;
+      margin: -31px 0 0 -31px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff8fb1, #e0466d);
+      color: #fff;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(224, 70, 109, .45)
+    }
+
+    .stamp::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: #fff6ec;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .25)
+    }
+
+    .card-content {
+      position: relative;
+      transform: translateZ(40px)
+    }
+
+    .card-eyebrow {
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: .6em;
+      color: #d0607a
+    }
+
+    .card-title {
+      text-align: center;
+      margin-top: 8px;
+      font-family: var(--font-hand);
+      font-weight: 400;
+      font-size: 44px;
+      letter-spacing: .18em;
+      background: linear-gradient(90deg, #b8264a, #e0466d, #e8862f, #b8264a);
+      background-size: 300%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradShift 5s ease infinite
+    }
+
+    .card-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin: 12px 0 20px;
+      color: #d97a8a;
+      font-size: 20px
+    }
+
+    .card-divider i {
+      width: 120px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #e5a0a8, transparent)
+    }
+
+    .card-text p {
+      font-family: var(--font-hand);
+      font-size: 19px;
+      line-height: 2.05;
+      text-indent: 2em;
+      margin-bottom: 4px
+    }
+
+    .ln {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 1s ease, transform 1s ease;
+      transition-delay: var(--d)
+    }
+
+    .in-view .ln {
+      opacity: 1;
+      transform: none
+    }
+
+    .hl {
+      color: #b8264a;
+      font-weight: 700;
+      background: linear-gradient(transparent 60%, rgba(255, 150, 120, .38) 60%) no-repeat;
+      background-size: 0% 100%;
+      transition: background-size 1.2s ease;
+      transition-delay: calc(var(--d, 0s) + 1.4s)
+    }
+
+    .in-view .hl {
+      background-size: 100% 100%
+    }
+
+    .sign {
+      text-align: right;
+      margin-top: 16px;
+      font-family: var(--font-hand);
+      color: #7a3a40
+    }
+
+    .sign span {
+      font-size: 19px;
+      letter-spacing: .2em
+    }
+
+    .sign b {
+      display: block;
+      font-weight: 400;
+      font-size: 36px;
+      letter-spacing: .12em;
+      color: #c22d52;
+      margin-top: 2px
+    }
+
+    .sign svg {
+      width: 220px;
+      height: 20px;
+      display: inline-block
+    }
+
+    .sign path {
+      fill: none;
+      stroke: #e0466d;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      transition: stroke-dashoffset 1.8s ease 3s
+    }
+
+    .in-view .sign path {
+      stroke-dashoffset: 0
+    }
+
+    /* ================== 3. 回忆 3D 轮播 ================== */
+    .memories {
+      justify-content: flex-start;
+      padding-top: 9vh
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 560px;
+      margin-top: 10px;
+      perspective: 1800px;
+      perspective-origin: 50% 35%;
+      cursor: grab;
+      user-select: none;
+      z-index: 3
+    }
+
+    .stage.grabbing {
+      cursor: grabbing
+    }
+
+    .floor {
+      position: absolute;
+      left: 50%;
+      top: 76%;
+      width: 1100px;
+      height: 340px;
+      margin-left: -550px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 150, 110, .3), rgba(255, 111, 145, .08) 45%, transparent 68%);
+      transform: rotateX(78deg);
+      filter: blur(6px)
+    }
+
+    .carousel-tilt {
+      position: absolute;
+      left: 50%;
+      top: 44%;
+      transform-style: preserve-3d;
+      transform: rotateX(-8deg)
+    }
+
+    .carousel {
+      position: absolute;
+      left: -125px;
+      top: -170px;
+      width: 250px;
+      height: 340px;
+      transform-style: preserve-3d
+    }
+
+    .mem-card {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d
+    }
+
+    .mem-inner {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #3a1320;
+      box-shadow: 0 22px 50px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 210, 170, .28);
+      filter: brightness(var(--face, 1));
+      transition: transform .7s cubic-bezier(.2, .9, .2, 1), box-shadow .5s, filter .5s;
+      -webkit-box-reflect: below 14px linear-gradient(transparent 72%, rgba(255, 255, 255, .2))
+    }
+
+    .mem-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 1.2s cubic-bezier(.2, .9, .2, 1);
+      pointer-events: none
+    }
+
+    .mem-ph {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #ff9a8b, #ff6a88 50%, #ffcf70);
+      color: #fff
+    }
+
+    .mem-ph span {
+      font-size: 64px;
+      animation: floaty 2.4s ease-in-out infinite
+    }
+
+    .mem-ph em {
+      font-style: normal;
+      font-size: 13px;
+      letter-spacing: .15em;
+      opacity: .85
+    }
+
+    .missing img {
+      display: none
+    }
+
+    .missing .mem-ph {
+      display: flex
+    }
+
+    .mem-grad {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 50%, rgba(40, 8, 18, .85))
+    }
+
+    .mem-glare {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity .4s;
+      background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgba(255, 235, 210, .55), transparent 50%);
+      mix-blend-mode: overlay
+    }
+
+    .mem-shine {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(115deg, transparent 30%, rgba(255, 240, 220, .6) 48%, transparent 62%);
+      transform: translateX(-130%)
+    }
+
+    .mem-inner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      padding: 2px;
+      opacity: 0;
+      transition: opacity .5s;
+      background: conic-gradient(from var(--ang), #ffcf70, #ff6f91, #fff1c9, #ffb38a, #ffcf70);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: angSpin 3s linear infinite
+    }
+
+    .mem-cap {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 16px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      opacity: .8;
+      transform: translateY(8px);
+      transition: .5s
+    }
+
+    .mem-cap b {
+      font-family: Georgia, serif;
+      font-size: 30px;
+      color: var(--gold)
+    }
+
+    .mem-cap span {
+      font-size: 12px;
+      letter-spacing: .2em;
+      color: #ffe9dc
+    }
+
+    .mem-card.hovered .mem-inner {
+      transform: translateZ(120px) scale(1.14) rotateX(var(--trx, 0deg)) rotateY(var(--try, 0deg));
+      box-shadow: 0 34px 80px rgba(0, 0, 0, .6), 0 0 80px 12px rgba(255, 140, 110, .55);
+      filter: brightness(1.08) saturate(1.15)
+    }
+
+    .mem-card.hovered img {
+      transform: scale(1.14)
+    }
+
+    .mem-card.hovered .mem-glare,
+    .mem-card.hovered .mem-inner::after {
+      opacity: 1
+    }
+
+    .mem-card.hovered .mem-shine {
+      transform: translateX(130%);
+      transition: transform 1.1s ease
+    }
+
+    .mem-card.hovered .mem-cap {
+      opacity: 1;
+      transform: none
+    }
+
+    .carousel.hovering .mem-card:not(.hovered) .mem-inner {
+      filter: brightness(calc(var(--face, 1)*.4)) blur(2px) grayscale(.3)
+    }
+
+    .car-ctrl {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      margin-top: -6px
+    }
+
+    .cbtn {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 26px;
+      color: var(--champagne);
+      border: 1px solid rgba(255, 210, 170, .35);
+      background: rgba(255, 220, 200, .06);
+      backdrop-filter: blur(10px);
+      transition: .35s
+    }
+
+    .cbtn:hover {
+      background: linear-gradient(135deg, var(--rose), var(--gold));
+      color: #fff;
+      transform: scale(1.12);
+      box-shadow: 0 0 30px rgba(255, 140, 110, .6);
+      border-color: transparent
+    }
+
+    .car-count {
+      font-family: Georgia, serif;
+      letter-spacing: .15em;
+      color: rgba(255, 230, 210, .6)
+    }
+
+    .car-count b {
+      font-size: 34px;
+      color: var(--gold);
+      margin-right: 6px
+    }
+
+    .car-tip {
+      position: relative;
+      z-index: 3;
+      margin-top: 16px;
+      font-size: 12px;
+      letter-spacing: .4em;
+      color: rgba(255, 230, 210, .45)
+    }
+
+    #lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 4, 8, .82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      opacity: 0;
+      visibility: hidden;
+      transition: .5s;
+      perspective: 1400px
+    }
+
+    #lightbox.open {
+      opacity: 1;
+      visibility: visible
+    }
+
+    .lb-frame {
+      position: relative;
+      transform: scale(.7) rotateX(25deg);
+      transition: transform .7s cubic-bezier(.2, 1.1, .3, 1);
+      text-align: center
+    }
+
+    #lightbox.open .lb-frame {
+      transform: none
+    }
+
+    #lbImg {
+      max-width: 76vw;
+      max-height: 76vh;
+      border-radius: 18px;
+      display: block;
+      box-shadow: 0 0 0 2px rgba(255, 207, 112, .7), 0 40px 100px rgba(0, 0, 0, .6), 0 0 90px rgba(255, 120, 120, .35)
+    }
+
+    #lbCap {
+      margin-top: 18px;
+      letter-spacing: .4em;
+      color: var(--champagne);
+      font-size: 14px
+    }
+
+    .lb-btn {
+      position: absolute;
+      top: 50%;
+      width: 56px;
+      height: 56px;
+      margin-top: -28px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 210, 170, .4);
+      background: rgba(255, 220, 200, .08);
+      color: #fff;
+      font-size: 26px;
+      cursor: pointer;
+      transition: .3s
+    }
+
+    .lb-btn:hover {
+      background: linear-gradient(135deg, var(--rose), var(--gold))
+    }
+
+    .lb-prev {
+      left: 4vw
+    }
+
+    .lb-next {
+      right: 4vw
+    }
+
+    .lb-close {
+      position: absolute;
+      top: 30px;
+      right: 40px;
+      font-size: 30px;
+      color: var(--champagne);
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: .3s
+    }
+
+    .lb-close:hover {
+      transform: rotate(90deg);
+      color: var(--rose)
+    }
+
+    /* ================== 4. 时间线 ================== */
+    .timeline-sec {
+      position: relative
+    }
+
+    .tl-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: hidden
+    }
+
+    .tl-head {
+      position: absolute;
+      top: 7vh;
+      left: 0;
+      right: 0
+    }
+
+    .tl-year {
+      position: absolute;
+      left: 50%;
+      top: 56%;
+      transform: translate(-50%, -50%);
+      font-family: Georgia, serif;
+      font-size: 34vh;
+      font-weight: 900;
+      letter-spacing: .05em;
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(255, 190, 140, .1);
+      transition: opacity .3s, transform .5s;
+      pointer-events: none
+    }
+
+    .tl-year.swap {
+      opacity: 0;
+      transform: translate(-50%, -46%) scale(.94)
+    }
+
+    .tl-track {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      will-change: transform
+    }
+
+    .tl-svg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      overflow: visible
+    }
+
+    .tl-base {
+      fill: none;
+      stroke: rgba(255, 200, 150, .18);
+      stroke-width: 2;
+      stroke-dasharray: 6 10
+    }
+
+    .tl-glow {
+      fill: none;
+      stroke: url(#tlGrad);
+      stroke-width: 14;
+      stroke-linecap: round;
+      opacity: .22
+    }
+
+    .tl-prog {
+      fill: none;
+      stroke: url(#tlGrad);
+      stroke-width: 4;
+      stroke-linecap: round
+    }
+
+    .tl-comet {
+      fill: #fff;
+      filter: drop-shadow(0 0 8px #ffcf70) drop-shadow(0 0 18px #ff6f91)
+    }
+
+    .tl-item {
+      position: absolute;
+      width: 0;
+      height: 0
+    }
+
+    .tl-node {
+      position: absolute;
+      left: -14px;
+      top: -14px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff 0 20%, var(--gold) 42%, var(--rose) 78%);
+      box-shadow: 0 0 0 5px rgba(255, 200, 140, .1);
+      transform: scale(.55);
+      filter: grayscale(.8) brightness(.6);
+      transition: .7s cubic-bezier(.2, 1.4, .3, 1)
+    }
+
+    .tl-node::before,
+    .tl-node::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 190, 130, .7);
+      opacity: 0
+    }
+
+    .active .tl-node {
+      transform: scale(1);
+      filter: none;
+      box-shadow: 0 0 30px 8px rgba(255, 150, 110, .65)
+    }
+
+    .active .tl-node::before {
+      animation: ripple 2.2s ease-out infinite
+    }
+
+    .active .tl-node::after {
+      animation: ripple 2.2s ease-out 1.1s infinite
+    }
+
+    @keyframes ripple {
+      0% {
+        transform: scale(1);
+        opacity: .9
+      }
+
+      100% {
+        transform: scale(2.8);
+        opacity: 0
+      }
+    }
+
+    .tl-stem {
+      position: absolute;
+      left: -1px;
+      width: 2px;
+      height: 44px;
+      transform: scaleY(0);
+      transition: transform .5s ease .15s
+    }
+
+    .up .tl-stem {
+      bottom: 14px;
+      transform-origin: bottom;
+      background: linear-gradient(0deg, var(--gold), transparent)
+    }
+
+    .down .tl-stem {
+      top: 14px;
+      transform-origin: top;
+      background: linear-gradient(180deg, var(--gold), transparent)
+    }
+
+    .active .tl-stem {
+      transform: scaleY(1)
+    }
+
+    .tl-card {
+      position: absolute;
+      left: -190px;
+      width: 380px;
+      padding: 26px 28px 24px;
+      border-radius: 22px;
+      background: linear-gradient(150deg, rgba(255, 236, 220, .13), rgba(255, 180, 150, .05));
+      border: 1px solid rgba(255, 210, 170, .24);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 26px 60px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .14);
+      opacity: 0;
+      transition: transform 1s cubic-bezier(.2, .9, .2, 1), opacity .8s ease, box-shadow .4s, border-color .4s
+    }
+
+    .up .tl-card {
+      bottom: 58px;
+      transform-origin: bottom center;
+      transform: perspective(900px) rotateX(-65deg) translateY(40px) scale(.85)
+    }
+
+    .down .tl-card {
+      top: 58px;
+      transform-origin: top center;
+      transform: perspective(900px) rotateX(65deg) translateY(-40px) scale(.85)
+    }
+
+    .active .tl-card {
+      opacity: 1;
+      transform: perspective(900px) rotateX(0) translateY(0) scale(1)
+    }
+
+    .active .tl-card:hover {
+      transform: perspective(900px) rotateX(0) translateY(-8px) scale(1.04);
+      border-color: rgba(255, 207, 112, .6);
+      box-shadow: 0 34px 80px rgba(0, 0, 0, .45), 0 0 50px rgba(255, 140, 110, .35)
+    }
+
+    .tl-icon {
+      position: absolute;
+      right: 22px;
+      top: -28px;
+      font-size: 46px;
+      filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .35));
+      animation: floaty 3s ease-in-out infinite
+    }
+
+    .tl-date {
+      font-family: Georgia, var(--font-cn);
+      font-size: 25px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      background: linear-gradient(90deg, #fff1d6, var(--gold), var(--peach));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent
+    }
+
+    .tl-tag {
+      display: inline-block;
+      margin: 8px 0 12px;
+      padding: 3px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: .25em;
+      color: #ffc3cf;
+      background: rgba(255, 111, 145, .18);
+      border: 1px solid rgba(255, 111, 145, .35)
+    }
+
+    .tl-card p {
+      font-size: 15.5px;
+      line-height: 1.9;
+      color: rgba(255, 240, 230, .9)
+    }
+
+    .tl-index {
+      position: absolute;
+      right: 20px;
+      bottom: 6px;
+      font-family: Georgia, serif;
+      font-size: 50px;
+      font-weight: 900;
+      color: rgba(255, 200, 150, .08)
+    }
+
+    .now .tl-card {
+      background: linear-gradient(150deg, rgba(255, 200, 120, .26), rgba(255, 111, 145, .2));
+      border-color: rgba(255, 215, 140, .6)
+    }
+
+    .now .tl-node {
+      width: 40px;
+      height: 40px;
+      left: -20px;
+      top: -20px
+    }
+
+    .now.active .tl-node {
+      animation: heartBeat 1.2s ease-in-out infinite
+    }
+
+    @keyframes heartBeat {
+
+      0%,
+      40%,
+      100% {
+        transform: scale(1)
+      }
+
+      15% {
+        transform: scale(1.3)
+      }
+
+      28% {
+        transform: scale(1.12)
+      }
+    }
+
+    .tl-mini {
+      position: absolute;
+      bottom: 6vh;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      align-items: center
+    }
+
+    .tl-mini i {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 210, 170, .25);
+      cursor: pointer;
+      transition: .5s cubic-bezier(.2, 1, .3, 1)
+    }
+
+    .tl-mini i.on {
+      width: 38px;
+      background: linear-gradient(90deg, var(--rose), var(--gold));
+      box-shadow: 0 0 12px rgba(255, 150, 110, .7)
+    }
+
+    .tl-tip {
+      position: absolute;
+      bottom: 2.4vh;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: .4em;
+      color: rgba(255, 230, 210, .4)
+    }
+
+    /* ================== 5. 结尾 ================== */
+    .finale {
+      position: relative;
+      height: 100vh;
+      overflow: hidden;
+      background: #16070c
+    }
+
+    #finaleCanvas {
+      position: absolute;
+      inset: 0;
+      cursor: crosshair
+    }
+
+    .finale-fade {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 140px;
+      background: linear-gradient(#16070c, transparent);
+      pointer-events: none
+    }
+
+    .heart-word {
+      position: absolute;
+      left: 50%;
+      top: 39%;
+      transform: translate(-50%, -50%);
+      font-family: var(--font-hand);
+      font-size: 58px;
+      letter-spacing: .2em;
+      padding-left: .2em;
+      color: #fff3e6;
+      text-shadow: 0 0 30px rgba(255, 120, 140, .95), 0 0 60px rgba(255, 111, 145, .6);
+      pointer-events: none;
+      animation: beatText 1.2s ease-in-out infinite
+    }
+
+    @keyframes beatText {
+
+      0%,
+      40%,
+      100% {
+        transform: translate(-50%, -50%) scale(1)
+      }
+
+      12% {
+        transform: translate(-50%, -50%) scale(1.1)
+      }
+
+      26% {
+        transform: translate(-50%, -50%) scale(1.04)
+      }
+    }
+
+    .finale-text {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 9vh;
+      text-align: center;
+      pointer-events: none
+    }
+
+    .finale-text .en {
+      font-size: 13px;
+      letter-spacing: .6em;
+      color: var(--gold)
+    }
+
+    .finale-text h2 {
+      margin: 12px 0 10px;
+      font-family: var(--font-hand);
+      font-weight: 400;
+      font-size: 46px;
+      letter-spacing: .2em;
+      background: linear-gradient(90deg, var(--champagne), var(--peach), var(--rose), var(--gold), var(--champagne));
+      background-size: 300%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradShift 5s ease infinite
+    }
+
+    .finale-text p {
+      font-size: 15px;
+      letter-spacing: .3em;
+      color: rgba(255, 230, 210, .7)
+    }
+
+    .fw-btn {
+      pointer-events: auto;
+      margin-top: 24px;
+      padding: 14px 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 215, 150, .6);
+      cursor: pointer;
+      font-size: 15px;
+      letter-spacing: .3em;
+      color: #fff;
+      background: linear-gradient(90deg, rgba(255, 111, 145, .35), rgba(255, 207, 112, .35));
+      backdrop-filter: blur(10px);
+      transition: .35s
+    }
+
+    .fw-btn:hover {
+      background: linear-gradient(90deg, var(--rose), var(--gold));
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 0 40px rgba(255, 150, 110, .7)
+    }
+  </style>
 </head>
-<body class="locked">
-<canvas id="fx"></canvas>
-<!-- 请把音乐文件放在 audio 文件夹下，命名为 okaerinasai.mp3 -->
-<audio id="bgm" loop preload="auto" src="audio/okaerinasai.mp3"></audio>
-<div id="flash"></div>
 
-<!-- ========== 初始界面 ========== -->
-<section id="intro">
-  <div class="aurora"><i></i><i></i><i></i></div>
-  <div class="rays"></div>
-  <p class="intro-top">FOR MY DEAREST</p>
-  <div class="env-stage">
-    <div class="env-tilt" id="envTilt">
-      <div class="orbit-tilt"><div class="orbit" id="orbit"></div></div>
-      <div class="env-glow"></div>
-      <div class="env-bounce">
-        <div class="env" id="env">
-          <div class="env-back"></div>
-          <div class="letter"><div><small>HAPPY 2ND ANNIVERSARY</small><b>♥</b><span>致我最好的女友</span></div></div>
-          <div class="env-front"><span class="env-text">惊喜查收</span></div>
-          <div class="env-flap"></div>
-          <div class="seal">♥</div>
-        </div>
-      </div>
+<body>
+
+  <audio id="bgm" src="./assets/one.mp3" loop preload="auto"></audio>
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="fxCanvas"></canvas>
+  <div class="vignette"></div>
+
+  <!-- ============ 初始界面 ============ -->
+  <section id="intro">
+    <div class="intro-rays"></div>
+    <div class="intro-glow"></div>
+    <div class="intro-orbits">
+      <div class="i-ring a"></div>
+      <div class="i-ring b"></div>
+    </div>
+    <i class="spk" style="left:22%;top:28%;animation-delay:.2s"></i>
+    <i class="spk" style="left:76%;top:24%;animation-delay:.9s"></i>
+    <i class="spk" style="left:18%;top:70%;animation-delay:1.4s"></i>
+    <i class="spk" style="left:82%;top:66%;animation-delay:.5s"></i>
+    <i class="spk" style="left:34%;top:14%;animation-delay:1.8s"></i>
+    <i class="spk" style="left:64%;top:84%;animation-delay:1.1s"></i>
+
+    <div class="intro-head">
+      <div class="intro-eyebrow">A LETTER FOR MY GIRL</div>
+      <div class="intro-title">有一封来自 <em>邓先生</em> 的信</div>
+    </div>
+
+    <div class="envelope-stage">
       <div class="env-shadow"></div>
-    </div>
-  </div>
-  <p class="intro-hint">点 击 信 封 · 开 启 惊 喜</p>
-</section>
-
-<!-- ========== 主页面 ========== -->
-<div id="three"></div>
-<div class="vignette"></div>
-<div class="progress"><i id="prog"></i></div>
-<nav class="dots" id="dots">
-  <a href="#hero" data-t="两周年"></a><a href="#card" data-t="祝福"></a><a href="#gallery" data-t="回忆"></a><a href="#timeline" data-t="时光"></a>
-</nav>
-<button class="music off" id="music" title="音乐"></button>
-
-<main id="main">
-  <!-- 1 首页 -->
-  <section id="hero" class="sec">
-    <div class="gyro" data-speed="-.25"><i></i><i></i><i></i></div>
-    <div class="float" style="left:9%;top:18%;font-size:44px" data-speed=".35"><span>✨</span></div>
-    <div class="float" style="right:10%;top:22%;font-size:54px" data-speed="-.3"><span style="--d:-2s">💖</span></div>
-    <div class="float" style="left:14%;bottom:20%;font-size:50px" data-speed="-.4"><span style="--d:-4s">🎀</span></div>
-    <div class="float" style="right:14%;bottom:18%;font-size:44px" data-speed=".3"><span style="--d:-1s">🎂</span></div>
-    <div class="hero-wrap" data-speed=".12" id="heroWrap">
-      <div class="hero-inner" id="heroInner">
-        <p class="eyebrow reveal">HAPPY 2ND ANNIVERSARY <b>♥</b></p>
-        <h1 class="title reveal" data-split>两周年快乐</h1>
-        <p class="lead reveal"><span class="woof" data-split>汪汪汪</span>，<span class="shine">最好的女友</span>，祝我们<span class="hl" data-split>两周年快乐</span><span class="pop">🥳</span></p>
-        <div class="counter reveal" id="counter">
-          <div class="c-box"><b id="cd">0</b><span>天</span></div><div class="c-box"><b id="ch">0</b><span>时</span></div>
-          <div class="c-box"><b id="cm">0</b><span>分</span></div><div class="c-box"><b id="cs">0</b><span>秒</span></div>
-        </div>
-        <p class="counter-cap reveal">我们已经相爱了这么久 · 往后每一秒也是</p>
-      </div>
-    </div>
-    <div class="cue"></div>
-  </section>
-
-  <!-- 2 祝福卡片 -->
-  <section id="card" class="sec">
-    <div class="bg-word" data-speed=".2">LOVE LETTER</div>
-    <div class="float" style="left:8%;top:14%;font-size:40px" data-speed=".4"><span>🌸</span></div>
-    <div class="float" style="right:7%;bottom:12%;font-size:46px" data-speed="-.35"><span style="--d:-3s">💌</span></div>
-    <div class="card-scene reveal" id="cardScene">
-      <div class="card3d" id="card3d">
-        <div class="back b2"></div><div class="back b1"></div>
-        <div class="paper">
-          <div class="glare"></div>
-          <span class="corner tl">❦</span><span class="corner tr">❦</span><span class="corner bl">❦</span><span class="corner br">❦</span>
-          <div class="stamp">♥</div>
-          <h2 class="card-title">致最好的女朋友</h2>
-          <div class="divider"><span>♥</span></div>
-          <div class="card-body">
-            <p>最好的女友，今天是个特别的日子，从大一我们确认恋爱关系，到现在已经正式两周年啦，在恋爱的这两年里，我们一起经历了无数的欢笑和泪水，我想，这些都会化为我们之间<mark>最珍贵的宝藏</mark>吧。</p>
-            <p>两年了，从刚进大一的懵懂到现在，你见证了我的蜕变，可能我还是不能完全承担起一个男友的角色吧。还记得我们一起去唱歌的 ，一起打电玩的 ，一起做手艺的 ，当我们靠在一起时，感觉<mark>全世界都变得透明</mark>了，我只能感受到你的存在。每一段经历都如此宝贵。</p>
-            <p>希望我能牵着你的手，从过去，一同迈向未来，我们在一起的时间能充满欢乐与幸福</p>
+      <div class="envelope-wrap" id="envWrap">
+        <div class="envelope" id="envelope">
+          <div class="env-back"></div>
+          <div class="letter" id="letter">
+            <div class="letter-inner"><small>To 最好的你</small><b>两周年快乐</b><span>♥</span></div>
           </div>
-          <div class="sign">爱你的<b>邓邓邓</b>先生</div>
+          <div class="env-front"><i class="env-l"></i><i class="env-r"></i><i class="env-b"></i></div>
+          <div class="env-flap"><i class="flap-face"></i><i class="flap-back"></i></div>
+          <div class="env-seal">♥</div>
+          <div class="env-title">惊喜查收</div>
+          <div class="env-meta"><span>TO：最好的女朋友</span><span>FROM：邓邓邓先生</span></div>
         </div>
       </div>
     </div>
+
+    <div class="intro-tip">轻触信封 · 拆开你的惊喜</div>
   </section>
 
-  <!-- 3 我们的回忆 -->
-  <section id="gallery" class="sec">
-    <div class="bg-word" data-speed=".18" style="top:40%">MEMORIES</div>
-    <div class="sec-head reveal" style="position:relative;z-index:3"><small>OUR MEMORIES</small><h2 class="grad">我们的回忆</h2><div class="bar"></div></div>
-    <div class="g-stage reveal" id="gStage">
-      <div class="g-floor"></div>
-      <div class="g-tilt"><div class="ring" id="ring"></div></div>
+  <!-- 信纸（放大过渡） -->
+  <div id="paper">
+    <span class="paper-corner tl">❦</span><span class="paper-corner br">❦</span>
+    <p class="pl p-to" style="--d:.1s">To 我最好的女朋友：</p>
+    <h2 class="pl p-title" style="--d:.4s">两周年快乐</h2>
+    <p class="pl p-line" style="--d:.8s">七百多个日夜，你让平凡的每一天都闪闪发光。</p>
+    <p class="pl p-line" style="--d:1.2s">接下来，请牵着我的手，</p>
+    <p class="pl p-line" style="--d:1.6s">和我一起，把我们的故事再走一遍吧 ♥</p>
+    <p class="pl p-sign" style="--d:2s">—— 爱你的邓邓邓先生</p>
+    <div class="pl" style="--d:2.4s"><button class="p-btn" id="enterBtn">开启我们的故事 ✦</button></div>
+  </div>
+
+  <!-- ============ 主页面 ============ -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+  <button class="music-btn" id="musicBtn" title="背景音乐"></button>
+  <nav class="side-nav" id="sideNav">
+    <a><span>两周年快乐</span></a><a><span>致最好的你</span></a><a><span>我们的回忆</span></a><a><span>我们的时光</span></a><a><span>往后余生</span></a>
+  </nav>
+
+  <main id="main">
+    <!-- 1. 标题 -->
+    <section class="panel hero" data-sec id="s-hero">
+      <div class="par-layer" data-speed="0.45">
+        <div class="big2">2</div>
+      </div>
+      <div class="par-layer" data-speed="0.25">
+        <div class="orbits">
+          <div class="ring r1"></div>
+          <div class="ring r2"></div>
+          <div class="ring r3"></div>
+        </div>
+      </div>
+      <div class="par-layer" data-speed="0.15">
+        <div class="fh-wrap" style="--x:12%;--y:22%" data-depth="0.035"><span class="fh"
+            style="--s:56px;--d:0s">♥</span></div>
+        <div class="fh-wrap" style="--x:84%;--y:18%" data-depth="0.05"><span class="fh"
+            style="--s:40px;--d:-2s">♥</span></div>
+        <div class="fh-wrap" style="--x:8%;--y:70%" data-depth="0.025"><span class="fh"
+            style="--s:34px;--d:-4s">♥</span></div>
+        <div class="fh-wrap" style="--x:88%;--y:68%" data-depth="0.045"><span class="fh"
+            style="--s:62px;--d:-1s">♥</span></div>
+        <div class="fh-wrap" style="--x:26%;--y:84%" data-depth="0.06"><span class="fh"
+            style="--s:26px;--d:-3s">♥</span></div>
+        <div class="fh-wrap" style="--x:72%;--y:86%" data-depth="0.03"><span class="fh"
+            style="--s:30px;--d:-5s">♥</span></div>
+      </div>
+
+      <div class="hero-content" data-speed="-0.12" id="heroContent">
+        <div data-depth="-0.012">
+          <div class="eyebrow reveal">✦ SINCE 2024.04.03 · OUR 2ND ANNIVERSARY ✦</div>
+          <h1 class="rainbow-title" id="rainbowTitle"></h1>
+          <p class="hero-sub reveal" style="--rd:1.1s">
+            <span class="kw-wang" id="kwWang"></span><span class="paw">🐾</span>，<span class="kw-best">最好的女友</span>，<br>
+            祝我们<span class="kw-anni" id="kwAnni"></span><span class="kw-emoji">🥳</span>
+          </p>
+          <div class="love-clock reveal" style="--rd:1.5s">
+            <span>我们已相爱</span>
+            <span><b id="lcD">0</b>天</span><i class="sep"></i>
+            <span><b id="lcH">00</b>时</span><i class="sep"></i>
+            <span><b id="lcM">00</b>分</span><i class="sep"></i>
+            <span><b id="lcS">00</b>秒</span>
+          </div>
+        </div>
+      </div>
+      <div class="scroll-hint">
+        <div class="mouse"></div>向下滑动
+      </div>
+    </section>
+
+    <!-- 2. 祝福卡片 -->
+    <section class="panel blessing" data-sec id="s-letter">
+      <div class="par-layer" data-speed="0.3">
+        <div class="bless-bg">Love</div>
+      </div>
+      <div class="card-stage" id="cardStage" data-speed="-0.05">
+        <div class="card-flip">
+          <div class="card3d" id="card3d">
+            <div class="card-glow"></div>
+            <div class="tape"></div>
+            <div class="wax">♥</div>
+            <div class="stamp">
+              <svg viewBox="0 0 120 120">
+                <defs>
+                  <path id="circ" d="M60,60 m-44,0 a44,44 0 1,1 88,0 a44,44 0 1,1 -88,0" />
+                </defs>
+                <text>
+                  <textPath href="#circ">TWO YEARS OF LOVE ✦ 2024 — 2026 ✦</textPath>
+                </text>
+              </svg>
+              <span>♥</span>
+            </div>
+            <div class="card-glare"></div>
+            <div class="card-content">
+              <div class="card-eyebrow ln" style="--d:.3s">✦ LOVE LETTER ✦</div>
+              <h2 class="card-title ln" style="--d:.45s">致最好的女朋友</h2>
+              <div class="card-divider ln" style="--d:.6s"><i></i>❦<i></i></div>
+              <div class="card-text">
+                <p class="ln" style="--d:.8s">最好的女友，今天是个特别的日子，从大一我们确认恋爱关系，到现在已经正式<span class="hl"
+                    style="--d:.8s">两周年</span>啦，在恋爱的这两年里，我们一起经历了无数的欢笑和泪水，我想，这些都会化为我们之间<span class="hl"
+                    style="--d:1s">最珍贵的宝藏</span>吧。</p>
+                <p class="ln" style="--d:1.1s">两年了，从刚进大一的懵懂到现在，你见证了我的<span class="hl"
+                    style="--d:1.2s">蜕变</span>，可能我还是不能完全承担起一个男友的角色吧。</p>
+                <p class="ln" style="--d:1.4s">还记得我们一起去<span class="hl" style="--d:1.4s">唱歌</span>的，一起打<span class="hl"
+                    style="--d:1.5s">电玩</span>的，一起做<span class="hl" style="--d:1.6s">手艺</span>的，当我们靠在一起时，感觉<span
+                    class="hl" style="--d:1.7s">全世界都变得透明了</span>，我只能感受到你的存在。每一段经历都如此宝贵。</p>
+                <p class="ln" style="--d:1.7s">希望我能<span class="hl"
+                    style="--d:1.9s">牵着你的手</span>，从过去，一同迈向未来，我们在一起的时间能充满欢乐与幸福。</p>
+              </div>
+              <div class="sign ln" style="--d:2.1s">
+                <span>爱你的</span><b>邓邓邓先生</b>
+                <svg viewBox="0 0 220 20">
+                  <path d="M5 12 C 50 2, 90 18, 130 9 S 200 6, 215 12" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 回忆 -->
+    <section class="panel memories" data-sec id="s-memory">
+      <div class="sec-head reveal">
+        <span class="en">OUR MEMORIES</span>
+        <h2>我们的回忆</h2>
+        <p class="sec-sub">十个瞬间 · 装满了两年的心动</p>
+      </div>
+      <div class="stage" id="carStage">
+        <div class="floor"></div>
+        <div class="carousel-tilt">
+          <div class="carousel" id="carousel"></div>
+        </div>
+      </div>
+      <div class="car-ctrl reveal" style="--rd:.3s">
+        <button class="cbtn" id="carPrev">‹</button>
+        <div class="car-count"><b id="carIdx">01</b>/ 10</div>
+        <button class="cbtn" id="carNext">›</button>
+      </div>
+      <div class="car-tip">拖拽旋转 · 悬停感受 · 点击放大</div>
+    </section>
+
+    <!-- 4. 时间线 -->
+    <section class="timeline-sec" data-sec id="s-time">
+      <div class="tl-sticky">
+        <div class="tl-year" id="tlYear">2023</div>
+        <div class="tl-head sec-head reveal"><span class="en">OUR TIMELINE</span>
+          <h2>我们的时光</h2>
+        </div>
+        <div class="tl-track" id="tlTrack">
+          <svg class="tl-svg" id="tlSvg">
+            <defs>
+              <linearGradient id="tlGrad" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0" stop-color="#ff6f91" />
+                <stop offset=".5" stop-color="#ffb38a" />
+                <stop offset="1" stop-color="#ffcf70" />
+              </linearGradient>
+            </defs>
+            <path id="tlBase" class="tl-base" />
+            <path id="tlGlowPath" class="tl-glow" />
+            <path id="tlProg" class="tl-prog" />
+            <circle id="tlComet" class="tl-comet" r="7" />
+          </svg>
+        </div>
+        <div class="tl-mini" id="tlMini"></div>
+        <div class="tl-tip">继续向下滚动 · 沿着时间线前进 →</div>
+      </div>
+    </section>
+
+    <!-- 5. 结尾 -->
+    <section class="finale" data-sec id="s-finale">
+      <canvas id="finaleCanvas"></canvas>
+      <div class="finale-fade"></div>
+      <div class="heart-word">爱你</div>
+      <div class="finale-text">
+        <div class="en">TO BE CONTINUED</div>
+        <h2>从过去，一同迈向未来</h2>
+        <p>HAPPY 2ND ANNIVERSARY · 往后的每一天，都想和你一起过</p>
+        <button class="fw-btn" id="fwBtn">✦ 为我们放一场烟花 ✦</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="lightbox">
+    <button class="lb-close">✕</button>
+    <button class="lb-btn lb-prev" id="lbPrev">‹</button>
+    <div class="lb-frame"><img id="lbImg" alt="">
+      <div id="lbCap"></div>
     </div>
-    <div class="g-ui reveal">
-      <button class="g-btn" id="gPrev">‹</button>
-      <div class="g-now"><span id="gNo">01 / 10</span><b id="gTitle">初遇</b></div>
-      <button class="g-btn" id="gNext">›</button>
-    </div>
-    <p class="g-hint">拖动旋转 · 悬停查看 · 点击放大</p>
-  </section>
+    <button class="lb-btn lb-next" id="lbNext">›</button>
+  </div>
 
-  <!-- 4 我们的时光 -->
-  <section id="timeline" class="sec">
-    <div style="width:100%">
-      <div class="t-head"><div class="sec-head reveal"><small>OUR TIMELINE</small><h2 class="grad">我们的时光</h2><div class="bar"></div></div></div>
-      <div class="tl" id="tl"><div class="tl-line"><div class="tl-fill" id="tlFill"></div></div></div>
-    </div>
-  </section>
+  <script>
+    (() => {
+      const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+      const DPR = Math.min(window.devicePixelRatio || 1, 2);
+      let W = innerWidth, H = innerHeight;
+      const mouse = { x: W / 2, y: H / 2, tx: W / 2, ty: H / 2 };
+      const HUES = [[255, 111, 145], [255, 150, 110], [255, 207, 112], [255, 175, 160]];
+      let opened = false, entered = false, autoTimer = null;
 
-  <section class="foot" id="foot">
-    <div class="heart3d" id="heart3d" data-speed=".1"></div>
-    <h2 class="grad reveal">两周年快乐 · 我爱你</h2>
-    <p class="reveal">愿我们的故事，永远写不完</p>
-    <button class="fire-btn reveal" id="fireBtn">放 烟 花</button>
-    <div class="copy">MADE WITH ♥ BY 邓邓邓</div>
-  </section>
-</main>
+      function fit(c, ctx, w, h) { c.width = w * DPR; c.height = h * DPR; c.style.width = w + 'px'; c.style.height = h + 'px'; ctx.setTransform(DPR, 0, 0, DPR, 0, 0); }
+      function heart(ctx, x, y, s) {
+        y -= s * .5; ctx.beginPath(); ctx.moveTo(x, y + s * .3);
+        ctx.bezierCurveTo(x, y, x - s * .5, y, x - s * .5, y + s * .3);
+        ctx.bezierCurveTo(x - s * .5, y + s * .6, x, y + s * .8, x, y + s);
+        ctx.bezierCurveTo(x, y + s * .8, x + s * .5, y + s * .6, x + s * .5, y + s * .3);
+        ctx.bezierCurveTo(x + s * .5, y, x, y, x, y + s * .3); ctx.closePath();
+      }
+      function star(ctx, x, y, r, rot) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.beginPath();
+        ctx.moveTo(0, -r); ctx.quadraticCurveTo(0, 0, r, 0); ctx.quadraticCurveTo(0, 0, 0, r);
+        ctx.quadraticCurveTo(0, 0, -r, 0); ctx.quadraticCurveTo(0, 0, 0, -r); ctx.restore();
+      }
 
-<div id="lb"><figure><img id="lbImg" alt=""><figcaption id="lbCap"></figcaption></figure></div>
+      /* ---------- 背景光斑 ---------- */
+      const bgC = $('#bgCanvas'), bg = bgC.getContext('2d');
+      let bokeh = [];
+      function mkB(init) {
+        return {
+          x: Math.random() * W, y: init ? Math.random() * H : H + 60, r: Math.random() * 50 + 8, vy: -(Math.random() * .35 + .1), vx: (Math.random() - .5) * .2,
+          c: HUES[Math.random() * 4 | 0], a: Math.random() * .16 + .05, h: Math.random() < .4, d: Math.random() * .04 + .01, ph: Math.random() * 6.28, rot: (Math.random() - .5) * .6
+        };
+      }
+      function initB() { bokeh = Array.from({ length: Math.round(W * H / 36000) }, () => mkB(true)); }
+      function drawBg(t) {
+        bg.clearRect(0, 0, W, H);
+        const ox = mouse.x - W / 2, oy = mouse.y - H / 2;
+        for (const b of bokeh) {
+          b.y += b.vy; b.x += b.vx + Math.sin(t * .001 + b.ph) * .15;
+          if (b.y < -80) Object.assign(b, mkB(false));
+          const x = b.x - ox * b.d, y = b.y - oy * b.d;
+          if (b.h) {
+            bg.save(); bg.translate(x, y); bg.rotate(b.rot + Math.sin(t * .001 + b.ph) * .2);
+            bg.fillStyle = `rgba(${b.c},${b.a * 1.5})`; heart(bg, 0, 0, b.r * .55); bg.fill(); bg.restore();
+          } else {
+            const g = bg.createRadialGradient(x, y, 0, x, y, b.r);
+            g.addColorStop(0, `rgba(${b.c},${b.a})`); g.addColorStop(1, `rgba(${b.c},0)`);
+            bg.fillStyle = g; bg.beginPath(); bg.arc(x, y, b.r, 0, 7); bg.fill();
+          }
+        }
+      }
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script>
-const $=(s,c=document)=>c.querySelector(s),$$=(s,c=document)=>[...c.querySelectorAll(s)];
+      /* ---------- 特效层（鼠标星尘 / 爱心爆炸） ---------- */
+      const fxC = $('#fxCanvas'), fx = fxC.getContext('2d');
+      const fxP = [];
+      function spark(x, y, o = {}) {
+        fxP.push({
+          x, y, vx: o.vx ?? (Math.random() - .5) * 1.2, vy: o.vy ?? (Math.random() - .5) * 1.2 - .3, life: 0,
+          max: o.max || (40 + Math.random() * 30), s: o.s || (Math.random() * 3 + 1.5), c: o.c || HUES[Math.random() * 4 | 0],
+          type: o.type || 'star', g: o.g ?? .02, rot: Math.random() * 6.28, vr: (Math.random() - .5) * .2
+        });
+      }
+      function burst(x, y, n = 18, type = 'heart') {
+        for (let i = 0; i < n; i++) {
+          const a = Math.PI * 2 * i / n + Math.random() * .3, sp = Math.random() * 4 + 2.5;
+          const isH = type === 'heart' && Math.random() < .65;
+          spark(x, y, { vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 1.5, type: isH ? 'heart' : 'star', s: isH ? Math.random() * 10 + 8 : Math.random() * 4 + 2, max: 60 + Math.random() * 40, g: .08 });
+        }
+      }
+      function drawFx() {
+        fx.clearRect(0, 0, W, H); fx.globalCompositeOperation = 'lighter';
+        for (let i = fxP.length - 1; i >= 0; i--) {
+          const p = fxP[i]; p.life++; p.x += p.vx; p.y += p.vy; p.vx *= .97; p.vy = p.vy * .97 + p.g; p.rot += p.vr;
+          const k = 1 - p.life / p.max; if (k <= 0) { fxP.splice(i, 1); continue; }
+          fx.globalAlpha = k; fx.fillStyle = `rgb(${p.c})`;
+          if (p.type === 'heart') {
+            fx.save(); fx.translate(p.x, p.y); fx.rotate(p.rot * .3); fx.shadowColor = `rgb(${p.c})`; fx.shadowBlur = 12;
+            heart(fx, 0, 0, p.s * (.6 + k * .4)); fx.fill(); fx.restore();
+          } else {
+            star(fx, p.x, p.y, p.s * (.5 + k), p.rot); fx.fill();
+            fx.globalAlpha = k * .15; fx.beginPath(); fx.arc(p.x, p.y, p.s * 1.8 * k, 0, 7); fx.fill();
+          }
+        }
+        fx.globalAlpha = 1; fx.globalCompositeOperation = 'source-over';
+      }
+      let lastTrail = 0;
+      addEventListener('mousemove', e => {
+        mouse.tx = e.clientX; mouse.ty = e.clientY;
+        const now = performance.now();
+        if (now - lastTrail > 16) {
+          lastTrail = now;
+          spark(e.clientX, e.clientY, { vx: (Math.random() - .5) * .8, vy: Math.random() * .6 + .2, max: 35 + Math.random() * 20, s: Math.random() * 3 + 2, g: .01 });
+        }
+      });
+      addEventListener('click', e => {
+        if (!entered || e.target.closest('.finale') || e.target.closest('#lightbox')) return;
+        burst(e.clientX, e.clientY, 12, 'heart');
+      });
 
-/* ---------- 数据（可自行替换） ---------- */
-const PHOTOS=[
- {t:'初遇',d:'军训，你排在我后面'},{t:'告白',d:'绕了操场两圈的勇气'},{t:'牵手',d:'手心里都是紧张'},{t:'宜城',d:'你的家乡，你的高中'},
- {t:'辣子鸡',d:'和学弟的特色晚餐'},{t:'键盘',d:'你送我的礼物'},{t:'零食礼包',d:'铺了厚厚的拉菲草'},{t:'水上乐园',d:'襄阳的夏天'},
- {t:'晚风',d:'沿着街道走了很远'},{t:'未来',d:'继续牵着你的手'}
-].map((p,i)=>({...p,src:`https://picsum.photos/seed/love-memory-${i+1}/600/800`})); // ← 换成你们的照片链接
+      /* ---------- 音乐 ---------- */
+      const bgm = $('#bgm'), mBtn = $('#musicBtn');
+      function fadeVol(to, ms = 1500) {
+        const from = bgm.volume, st = performance.now();
+        (function f(n) { const k = Math.min(1, (n - st) / ms); bgm.volume = Math.max(0, Math.min(1, from + (to - from) * k)); if (k < 1) requestAnimationFrame(f); })(st);
+      }
+      function playMusic() {
+        bgm.volume = 0;
+        const p = bgm.play();
+        if (p && p.then) p.then(() => { mBtn.classList.add('playing'); fadeVol(.75, 2500); }).catch(() => { });
+      }
+      mBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (bgm.paused) { bgm.play().then(() => { mBtn.classList.add('playing'); fadeVol(.75, 800); }).catch(() => { }); }
+        else { bgm.pause(); mBtn.classList.remove('playing'); }
+      });
 
-const EVENTS=[
- {y:'2023',date:'2023年9月',e:'🥰',t:'初 识',x:'军训时你排在我后面，我第一次认识了你🥰 还记得你跟我说的什么嘛？'},
- {y:'2024',date:'2024年4月3日',e:'🤗',t:'告 白',x:'在同学的帮助下，我向你告白。我们刚在一起时，我傻傻地绕了操场两圈才敢牵起你的手🤗'},
- {y:'宜城',date:'2024年6月',e:'😋',t:'宜城之行',x:'我们到宜城（你的家乡），去看了你的高中，晚上和你的学弟一起吃了一顿特色菜——辣子鸡😋'},
- {y:'10.28',date:'2024年10月28日',e:'⌨️',t:'你送的键盘',x:'你送给了我一个键盘，它真的很好看，我真的很喜欢🥳'},
- {y:'2025',date:'2025年4月3日',e:'🎁',t:'零食大礼包',x:'还记得我亲手给你填的零食大礼包嘛，铺了那么厚的拉菲草嘿嘿😁'},
- {y:'襄阳',date:'2025年6月',e:'🌙',t:'水上乐园',x:'我们去襄阳水上乐园玩，晚上吹着风，随着街道走了很远很远。'},
- {y:'NOW',date:'现在',e:'💍',t:'两周年啦',x:'我们已经在一起两周年啦，很庆幸，能和你在一起😙',final:true}
-];
+      /* ---------- 初始界面：信封 ---------- */
+      const intro = $('#intro'), wrap = $('#envWrap'), envEl = $('#envelope'), letter = $('#letter'), paper = $('#paper');
+      intro.addEventListener('mousemove', e => {
+        if (opened) return;
+        envEl.style.setProperty('--rx', ((e.clientY / H - .5) * -18) + 'deg');
+        envEl.style.setProperty('--ry', ((e.clientX / W - .5) * 26) + 'deg');
+      });
+      wrap.addEventListener('click', () => {
+        if (opened) return; opened = true;
+        playMusic();
+        const r = wrap.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 28, 'heart');
+        const cur = getComputedStyle(wrap).transform;
+        wrap.style.animation = 'none'; wrap.style.transform = cur === 'none' ? '' : cur; void wrap.offsetWidth;
+        wrap.style.transition = 'transform .7s cubic-bezier(.2,.8,.2,1)'; wrap.style.transform = 'translateY(0) rotate(0) scale(1)';
+        envEl.style.setProperty('--rx', '8deg'); envEl.style.setProperty('--ry', '0deg'); envEl.style.setProperty('--s', '1');
+        intro.classList.add('opening');
+        setTimeout(() => intro.classList.add('letter-up'), 1100);
+        setTimeout(showPaper, 2500);
+      });
+      function showPaper() {
+        const r = letter.getBoundingClientRect();
+        const s = r.width / paper.offsetWidth;
+        const tx = r.left + r.width / 2 - W / 2, ty = r.top + r.height / 2 - H / 2;
+        paper.style.transition = 'none';
+        paper.style.transform = `translate(-50%,-50%) translate(${tx}px,${ty}px) scale(${s})`;
+        paper.classList.add('show'); letter.style.visibility = 'hidden'; intro.classList.add('env-away');
+        void paper.offsetWidth;
+        paper.style.transition = 'transform 2.2s cubic-bezier(.16,1,.3,1)';
+        paper.style.transform = 'translate(-50%,-50%) scale(1)';
+        setTimeout(() => paper.classList.add('content-in'), 1300);
+        autoTimer = setTimeout(enterMain, 10000);
+      }
+      $('#enterBtn').addEventListener('click', e => { e.stopPropagation(); enterMain(); });
+      function enterMain() {
+        if (entered) return; entered = true; clearTimeout(autoTimer);
+        paper.style.transition = 'transform 1.4s cubic-bezier(.7,0,.2,1), opacity 1.1s ease .25s, filter 1.1s ease .25s';
+        paper.style.transform = 'translate(-50%,-50%) scale(2.6)'; paper.style.opacity = '0'; paper.style.filter = 'blur(12px)';
+        intro.classList.add('leave'); document.body.classList.add('entered'); window.scrollTo(0, 0);
+        setTimeout(() => { intro.remove(); paper.remove(); }, 1700);
+        secs.forEach(s => io.observe(s));
+        onScroll();
+      }
 
-/* ---------- 文字拆分 ---------- */
-$$('[data-split]').forEach(el=>{const t=el.textContent;el.textContent='';[...t].forEach((c,i)=>{const s=document.createElement('i');s.textContent=c;s.style.setProperty('--i',i);el.appendChild(s)})});
-$('#orbit').innerHTML=Array.from({length:9},(_,i)=>`<span style="--i:${i}">${['✦','♥','✿','✧','❀','♥','✦','✿','✧'][i]}</span>`).join('');
+      /* ---------- 标题文字构建 ---------- */
+      $('#rainbowTitle').innerHTML = [...'两周年快乐'].map((c, i) =>
+        `<span class="cw" style="--i:${i}"><span class="ch"><span class="ch-3d">${c}</span><span class="ch-face">${c}</span></span></span>`).join('');
+      $('#kwWang').innerHTML = [...'汪汪汪'].map((c, i) => `<span style="--i:${i}">${c}</span>`).join('');
+      $('#kwAnni').innerHTML = [...'两周年快乐'].map((c, i) => `<span style="--i:${i}">${c}</span>`).join('');
 
-/* ---------- 3D 爱心 DOM ---------- */
-$('#heart3d').innerHTML=Array.from({length:16},(_,i)=>{const z=(i-8)*3.5;const l=45+i*2.6;return `<span style="transform:translateZ(${z}px);color:hsl(350,85%,${l}%)">♥</span>`}).join('');
+      /* ---------- 相爱计时 ---------- */
+      const START = new Date(2024, 3, 3, 0, 0, 0);
+      function tickClock() {
+        let d = Math.max(0, (Date.now() - START) / 1000);
+        const days = Math.floor(d / 86400); d -= days * 86400;
+        const h = Math.floor(d / 3600); d -= h * 3600;
+        const m = Math.floor(d / 60), s = Math.floor(d - m * 60);
+        $('#lcD').textContent = days; $('#lcH').textContent = String(h).padStart(2, '0');
+        $('#lcM').textContent = String(m).padStart(2, '0'); $('#lcS').textContent = String(s).padStart(2, '0');
+      }
+      tickClock(); setInterval(tickClock, 1000);
 
-/* ---------- 构建时间线 ---------- */
-$('#tl').insertAdjacentHTML('beforeend',EVENTS.map((v,i)=>{const side=i%2?'right':'left';
- return `<div class="t-item ${side} ${v.final?'final':''}"><div class="t-year" data-speed=".14">${v.y}</div><div class="t-node">${v.e}</div>
- <div class="t-side reveal ${i%2?'from-right':'from-left'}"><div class="t-card"><div class="glare"></div><span class="t-no">0${i+1}</span>
- <span class="t-date">${v.date}</span><h3>${v.t}</h3><p>${v.x}</p></div></div></div>`}).join(''));
+      /* ---------- 祝福卡片 3D 倾斜 ---------- */
+      const cardStage = $('#cardStage'), card = $('#card3d');
+      const cR = { x: 0, y: 0, tx: 0, ty: 0 };
+      cardStage.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+        cR.ty = (px - .5) * 14; cR.tx = (.5 - py) * 10;
+        card.style.setProperty('--gx', px * 100 + '%'); card.style.setProperty('--gy', py * 100 + '%');
+      });
+      cardStage.addEventListener('mouseleave', () => { cR.tx = cR.ty = 0; });
 
-/* ================= 特效画布 ================= */
-const fx=$('#fx'),fc=fx.getContext('2d');let W,H;
-function rs(){const d=Math.min(devicePixelRatio,2);W=innerWidth;H=innerHeight;fx.width=W*d;fx.height=H*d;fc.setTransform(d,0,0,d,0,0)}rs();addEventListener('resize',rs);
-const COL=['#ff5d73','#ff8a5b','#ffc86b','#ffe3b0','#ff7eb3','#fff'],P=[];
-function heartPath(c,x,y,s){c.beginPath();c.moveTo(x,y+s*.3);c.bezierCurveTo(x,y,x-s*.5,y,x-s*.5,y+s*.3);c.bezierCurveTo(x-s*.5,y+s*.6,x,y+s*.8,x,y+s);c.bezierCurveTo(x,y+s*.8,x+s*.5,y+s*.6,x+s*.5,y+s*.3);c.bezierCurveTo(x+s*.5,y,x,y,x,y+s*.3);c.fill()}
-const add=o=>P.push({life:1,decay:.01,g:0,size:8,rot:0,vr:0,vx:0,vy:0,type:'spark',c:'#ffc86b',...o});
-function burst(x,y,n=24,type='spark',pw=6){for(let i=0;i<n;i++){const a=Math.random()*6.283,s=Math.random()*pw+1;add({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-1,g:.12,decay:.012+Math.random()*.012,size:type==='heart'?10+Math.random()*12:3+Math.random()*3,type,c:COL[i%COL.length]})}}
-function confetti(){for(let i=0;i<180;i++){const l=i%2;add({x:l?-10:W+10,y:H*.85,vx:(l?1:-1)*(6+Math.random()*10),vy:-(9+Math.random()*13),g:.28,decay:.004+Math.random()*.004,size:6+Math.random()*8,type:'conf',rot:Math.random()*6,vr:(Math.random()-.5)*.4,c:COL[i%COL.length]})}}
-function firework(x,y){const c=COL[Math.random()*5|0];for(let i=0;i<70;i++){const a=i/70*6.283,s=2+Math.random()*4.5;add({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,g:.05,decay:.011,size:3.4,c})}}
-function fxStep(){fc.clearRect(0,0,W,H);
- for(let i=P.length-1;i>=0;i--){const p=P[i];p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.vx*=.992;p.rot+=p.vr;p.life-=p.decay;
-  if(p.life<=0||p.y>H+60||p.y<-80){P.splice(i,1);continue}
-  fc.globalAlpha=Math.max(p.life,0);fc.fillStyle=p.c;
-  if(p.type==='heart')heartPath(fc,p.x,p.y,p.size);
-  else if(p.type==='conf'){fc.save();fc.translate(p.x,p.y);fc.rotate(p.rot);fc.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);fc.restore()}
-  else{fc.shadowColor=p.c;fc.shadowBlur=12;fc.beginPath();fc.arc(p.x,p.y,p.size/2,0,6.283);fc.fill();fc.shadowBlur=0}}
- fc.globalAlpha=1}
+      /* ---------- 3D 回忆轮播 ---------- */
+      const car = $('#carousel'), stage = $('#carStage'), N = 10, R = 540;
+      const cards = [];
+      for (let i = 0; i < N; i++) {
+        const n = String(i + 1).padStart(2, '0');
+        const el = document.createElement('div'); el.className = 'mem-card';
+        el.style.transform = `rotateY(${i * 36}deg) translateZ(${R}px)`;
+        el.innerHTML = `<div class="mem-inner"><img src="./img/image${n}.png" alt="回忆${n}" draggable="false">
+    <div class="mem-ph"><span>♥</span><em>image${n}.png</em></div><div class="mem-grad"></div>
+    <div class="mem-glare"></div><div class="mem-shine"></div>
+    <div class="mem-cap"><b>${n}</b><span>我们的回忆 · MEMORY</span></div></div>`;
+        const inner = el.firstElementChild;
+        el.querySelector('img').onerror = () => inner.classList.add('missing');
+        el.addEventListener('mouseenter', () => {
+          if (dragging) return;
+          hoverCard = el; el.classList.add('hovered'); car.classList.add('hovering');
+          const r = inner.getBoundingClientRect();
+          for (let k = 0; k < 14; k++) spark(r.left + Math.random() * r.width, r.top + r.height * (.3 + Math.random() * .7), { vx: (Math.random() - .5) * 2, vy: -Math.random() * 3 - 1, s: Math.random() * 4 + 2, max: 60, g: -.01 });
+        });
+        el.addEventListener('mouseleave', () => {
+          el.classList.remove('hovered');
+          if (hoverCard === el) { hoverCard = null; car.classList.remove('hovering'); }
+          inner.style.setProperty('--trx', '0deg'); inner.style.setProperty('--try', '0deg');
+        });
+        el.addEventListener('mousemove', e => {
+          const r = inner.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+          inner.style.setProperty('--gx', px * 100 + '%'); inner.style.setProperty('--gy', py * 100 + '%');
+          inner.style.setProperty('--try', ((px - .5) * 16) + 'deg'); inner.style.setProperty('--trx', ((.5 - py) * 16) + 'deg');
+        });
+        el.addEventListener('click', () => { if (moved < 6) openLb(i); });
+        car.appendChild(el); cards.push(el);
+      }
+      let ang = 0, vel = 0, dragging = false, lastX = 0, moved = 0, hoverCard = null, snap = null, idleUntil = 0, frontIdx = -1;
+      stage.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; moved = 0; snap = null; stage.classList.add('grabbing'); });
+      addEventListener('pointermove', e => { if (!dragging) return; const dx = e.clientX - lastX; lastX = e.clientX; moved += Math.abs(dx); ang += dx * .25; vel = dx * .25; });
+      addEventListener('pointerup', () => { if (dragging) { dragging = false; stage.classList.remove('grabbing'); idleUntil = performance.now() + 2500; } });
+      $('#carPrev').addEventListener('click', () => { snap = (snap ?? Math.round(ang / 36) * 36) + 36; idleUntil = performance.now() + 3000; });
+      $('#carNext').addEventListener('click', () => { snap = (snap ?? Math.round(ang / 36) * 36) - 36; idleUntil = performance.now() + 3000; });
+      function updateCarousel(now) {
+        if (!dragging) {
+          if (snap !== null) { ang += (snap - ang) * .09; if (Math.abs(snap - ang) < .05) { ang = snap; snap = null; } }
+          else { vel *= .94; ang += vel; if (!hoverCard && now > idleUntil && Math.abs(vel) < .05) ang -= .12; }
+        }
+        car.style.transform = `translateZ(${-R}px) rotateY(${ang}deg)`;
+        cards.forEach((c, i) => {
+          const a = ((i * 36 + ang) % 360 + 360) % 360, f = (Math.cos(a * Math.PI / 180) + 1) / 2;
+          c.firstElementChild.style.setProperty('--face', (.3 + f * .8).toFixed(3));
+          c.style.pointerEvents = f > .6 ? 'auto' : 'none';
+        });
+        const fi = ((Math.round(-ang / 36) % N) + N) % N;
+        if (fi !== frontIdx) { frontIdx = fi; $('#carIdx').textContent = String(fi + 1).padStart(2, '0'); }
+      }
+      const lb = $('#lightbox'), lbImg = $('#lbImg'), lbCap = $('#lbCap'); let lbIdx = 0;
+      function openLb(i) { lbIdx = (i + N) % N; const n = String(lbIdx + 1).padStart(2, '0'); lbImg.src = `./img/image${n}.png`; lbCap.textContent = `回忆 ${n} / 10`; lb.classList.add('open'); }
+      lb.addEventListener('click', e => { if (e.target === lb || e.target.closest('.lb-close')) lb.classList.remove('open'); });
+      $('#lbPrev').addEventListener('click', e => { e.stopPropagation(); openLb(lbIdx - 1); });
+      $('#lbNext').addEventListener('click', e => { e.stopPropagation(); openLb(lbIdx + 1); });
+      addEventListener('keydown', e => {
+        if (!lb.classList.contains('open')) return;
+        if (e.key === 'Escape') lb.classList.remove('open');
+        if (e.key === 'ArrowLeft') openLb(lbIdx - 1);
+        if (e.key === 'ArrowRight') openLb(lbIdx + 1);
+      });
 
-/* ================= 初始界面交互 ================= */
-let started=false,entered=false,mx=0,my=0;
-const bgm=$('#bgm'),music=$('#music'),intro=$('#intro'),env=$('#env');
-addEventListener('mousemove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5;
- if(!entered)$('#envTilt').style.transform=`rotateY(${mx*26}deg) rotateX(${-my*20}deg)`;
- else if(Math.random()<.5)add({x:e.clientX,y:e.clientY,vx:(Math.random()-.5)*1.2,vy:Math.random()*1.2,g:.03,decay:.03,size:3+Math.random()*3,c:COL[Math.random()*4|0]})});
-addEventListener('click',e=>{if(entered)burst(e.clientX,e.clientY,10,'heart',4)});
-function playMusic(){bgm.volume=0;bgm.play().then(()=>{music.classList.add('on');music.classList.remove('off');let v=0;const t=setInterval(()=>{v=Math.min(v+.03,.7);bgm.volume=v;if(v>=.7)clearInterval(t)},120)}).catch(()=>{})}
-music.addEventListener('click',()=>{if(bgm.paused){bgm.volume=.7;bgm.play();music.classList.add('on');music.classList.remove('off')}else{bgm.pause();music.classList.remove('on');music.classList.add('off')}});
-env.addEventListener('click',()=>{if(started)return;started=true;playMusic();
- intro.classList.add('opened');env.classList.add('open');
- const r=env.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,50,'spark',8);
- setTimeout(()=>burst(r.left+r.width/2,r.top,30,'heart',7),700);
- setTimeout(()=>intro.classList.add('fly'),2000);
- setTimeout(()=>$('#flash').classList.add('go'),2300);
- setTimeout(enter,2650)});
+      /* ---------- 时间线 ---------- */
+      const EVENTS = [
+        { date: '2023年9月', tag: '初 识', year: '2023', icon: '✨', text: '军训时你排在我后面，我第一次认识了你🥰，还记得你跟我说的什么嘛？' },
+        { date: '2024年4月3日', tag: '告 白', year: '2024', icon: '💌', text: '在同学的帮助下，我向你告白。我们刚在一起时，我傻傻地绕了操场两圈才敢牵起你的手🤗' },
+        { date: '2024年6月9日', tag: '宜 城', year: '2024', icon: '🌶️', text: '我们到宜城（你的家乡），我们去看了你的高中，晚上和你的学弟一起吃了一顿特色菜辣子鸡😋' },
+        { date: '2024年10月28日', tag: '礼 物', year: '2024', icon: '⌨️', text: '你送给了我一个键盘，它真的很好看，我真的很喜欢🥳' },
+        { date: '2025年4月3日', tag: '一周年', year: '2025', icon: '🎁', text: '还记得我亲手给你填的零食大礼包嘛，铺了那么厚的拉菲草嘿嘿😁' },
+        { date: '2025年6月', tag: '襄 阳', year: '2025', icon: '🌊', text: '我们去襄阳水上乐园玩，晚上吹着风随着街道走了很远' },
+        { date: '现在', tag: '两周年', year: 'NOW', icon: '💞', text: '现在，我们已经在一起两周年啦，很庆幸，能和你在一起😙' },
+      ];
+      const tlSec = $('#s-time'), tlTrack = $('#tlTrack'), tlSvg = $('#tlSvg'), tlYear = $('#tlYear');
+      const tlBase = $('#tlBase'), tlGlowP = $('#tlGlowPath'), tlProg = $('#tlProg'), tlComet = $('#tlComet'), tlMini = $('#tlMini');
+      const tlItems = EVENTS.map((ev, i) => {
+        const it = document.createElement('div');
+        it.className = 'tl-item ' + (i % 2 ? 'down' : 'up') + (i === EVENTS.length - 1 ? ' now' : '');
+        it.innerHTML = `<div class="tl-node"></div><div class="tl-stem"></div>
+    <div class="tl-card"><div class="tl-icon">${ev.icon}</div><div class="tl-date">${ev.date}</div>
+    <div class="tl-tag">${ev.tag}</div><p>${ev.text}</p><div class="tl-index">0${i + 1}</div></div>`;
+        tlTrack.appendChild(it); return it;
+      });
+      tlMini.innerHTML = EVENTS.map(() => '<i></i>').join('');
+      const miniDots = [...tlMini.children];
+      let GAP = 460, pts = [], tlTotal = 0, pathLen = 0, tlCur = 0, tlTarget = 0, curYear = '2023', lut = [], tlAct = -2;
+      miniDots.forEach((d, i) => d.addEventListener('click', () => {
+        window.scrollTo({ top: tlSec.offsetTop + (i / (EVENTS.length - 1)) * (tlSec.offsetHeight - H) + 2, behavior: 'smooth' });
+      }));
+      function layoutTl() {
+        GAP = Math.max(420, Math.min(560, W * .34));
+        const pad = W / 2, mid = H * .56, amp = Math.min(46, H * .05), n = EVENTS.length - 1;
+        tlTotal = pad * 2 + GAP * n;
+        pts = EVENTS.map((_, i) => ({ x: pad + i * GAP, y: mid + (i % 2 ? amp : -amp) }));
+        tlTrack.style.width = tlTotal + 'px';
+        tlSvg.setAttribute('width', tlTotal); tlSvg.setAttribute('height', H); tlSvg.setAttribute('viewBox', `0 0 ${tlTotal} ${H}`);
+        let d = `M 0 ${mid}`, prev = { x: 0, y: mid };
+        [...pts, { x: tlTotal, y: mid }].forEach(p => { const cx = (prev.x + p.x) / 2; d += ` C ${cx} ${prev.y}, ${cx} ${p.y}, ${p.x} ${p.y}`; prev = p; });
+        [tlBase, tlGlowP, tlProg].forEach(p => p.setAttribute('d', d));
+        pathLen = tlProg.getTotalLength();
+        [tlGlowP, tlProg].forEach(p => p.style.strokeDasharray = pathLen);
+        lut = []; for (let k = 0; k <= 300; k++) { const l = pathLen * k / 300; lut.push([tlProg.getPointAtLength(l).x, l]); }
+        tlItems.forEach((it, i) => { it.style.left = pts[i].x + 'px'; it.style.top = pts[i].y + 'px'; });
+        tlSec.style.height = (H + GAP * n * 1.25) + 'px';
+      }
+      function lenAtX(x) {
+        if (x <= 0) return 0; if (x >= tlTotal) return pathLen;
+        for (let k = 1; k < lut.length; k++) if (lut[k][0] >= x) { const a = lut[k - 1], b = lut[k]; return a[1] + (b[1] - a[1]) * ((x - a[0]) / ((b[0] - a[0]) || 1)); }
+        return pathLen;
+      }
+      function calcTl() { const r = tlSec.getBoundingClientRect(), max = r.height - H; return Math.min(1, Math.max(0, -r.top / max)); }
+      function updateTl() {
+        tlCur += (tlTarget - tlCur) * .1;
+        const shift = tlCur * GAP * (EVENTS.length - 1);
+        tlTrack.style.transform = `translate3d(${-shift}px,0,0)`;
+        const cx = W / 2 + shift + 30, L = lenAtX(cx);
+        tlProg.style.strokeDashoffset = pathLen - L; tlGlowP.style.strokeDashoffset = pathLen - L;
+        const pt = tlProg.getPointAtLength(L); tlComet.setAttribute('cx', pt.x); tlComet.setAttribute('cy', pt.y);
+        let act = -1;
+        tlItems.forEach((it, i) => {
+          const on = cx >= pts[i].x - GAP * .3; if (on) act = i;
+          if (on !== it.classList.contains('active')) {
+            it.classList.toggle('active', on);
+            if (on && i === EVENTS.length - 1) celebrate(it);
+          }
+        });
+        if (act !== tlAct) {
+          tlAct = act; miniDots.forEach((d, i) => d.classList.toggle('on', i === act));
+          const yr = EVENTS[Math.max(0, act)].year;
+          if (yr !== curYear) { curYear = yr; tlYear.classList.add('swap'); setTimeout(() => { tlYear.textContent = yr; tlYear.classList.remove('swap'); }, 300); }
+        }
+      }
+      function celebrate(it) {
+        const r = it.getBoundingClientRect();
+        burst(r.left, r.top, 30, 'heart');
+        setTimeout(() => burst(r.left - 120, r.top - 80, 18, 'heart'), 300);
+        setTimeout(() => burst(r.left + 120, r.top - 60, 18, 'heart'), 600);
+      }
 
-function enter(){entered=true;document.body.classList.remove('locked');document.body.classList.add('entered');scrollTo(0,0);
- intro.classList.add('gone');setTimeout(()=>intro.remove(),1400);confetti();setTimeout(confetti,700);
- const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.18});
- $$('.reveal').forEach((el,i)=>{el.style.transitionDelay=el.closest('#hero')?(i*.18+.3)+'s':'0s';io.observe(el)});
- const cs=$('#cardScene');new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle('in',e.isIntersecting&&e.intersectionRatio>.25)),{threshold:[.25]}).observe(cs);
- // 最后一个节点出现时放烟花
- new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){[0,400,800].forEach(d=>setTimeout(()=>firework(W*(.3+Math.random()*.4),H*(.25+Math.random()*.25)),d))}}),{threshold:.6}).observe($('.t-item.final'));
-}
+      /* ---------- 结尾：粒子爱心 + 烟花 ---------- */
+      const finC = $('#finaleCanvas'), fin = finC.getContext('2d');
+      let FW, FH, finVisible = false, hp = [], rockets = [], fwp = [], fc = { x: 0, y: 0 }, fwAuto = false;
+      function layoutFin() {
+        FW = finC.parentElement.clientWidth; FH = finC.parentElement.clientHeight; fit(finC, fin, FW, FH);
+        const sc = Math.min(FW, FH) / 56; fc = { x: FW / 2, y: FH * .39 - 2.5 * sc };
+        const n = Math.round(Math.min(1000, FW * FH / 1400)); hp = [];
+        for (let i = 0; i < n; i++) {
+          const t = Math.random() * Math.PI * 2, k = Math.random() < .55 ? 1 - Math.random() * .06 : Math.sqrt(Math.random());
+          const hx = 16 * Math.pow(Math.sin(t), 3), hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+          hp.push({ bx: hx * k * sc, by: hy * k * sc, x: Math.random() * FW, y: Math.random() * FH, vx: 0, vy: 0, s: Math.random() * 1.8 + .6, c: HUES[Math.random() * 4 | 0], tw: Math.random() * 6.28 });
+        }
+      }
+      function launch(x, y) {
+        const tx = x ?? FW * (.15 + Math.random() * .7), ty = y ?? FH * (.12 + Math.random() * .3);
+        rockets.push({ x: tx + (Math.random() - .5) * 80, y: FH, tx, ty, c: HUES[Math.random() * 4 | 0] });
+      }
+      function explode(r) {
+        const isHeart = Math.random() < .45, n = isHeart ? 90 : 110;
+        for (let i = 0; i < n; i++) {
+          let vx, vy;
+          if (isHeart) { const t = i / n * Math.PI * 2; vx = 16 * Math.pow(Math.sin(t), 3) * .28; vy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * .28; }
+          else { const a = Math.random() * Math.PI * 2, sp = Math.random() * 5 + 1.5; vx = Math.cos(a) * sp; vy = Math.sin(a) * sp; }
+          fwp.push({ x: r.x, y: r.y, vx, vy, a: 1, dec: .01 + Math.random() * .01, c: Math.random() < .2 ? [255, 245, 225] : r.c });
+        }
+      }
+      finC.addEventListener('click', e => { const r = finC.getBoundingClientRect(); launch(e.clientX - r.left, e.clientY - r.top); });
+      $('#fwBtn').addEventListener('click', () => { for (let i = 0; i < 12; i++) setTimeout(() => launch(), i * 260); });
+      function drawFin(t) {
+        fin.globalCompositeOperation = 'source-over'; fin.fillStyle = 'rgba(22,7,12,.3)'; fin.fillRect(0, 0, FW, FH);
+        fin.globalCompositeOperation = 'lighter';
+        const bt = (t * .001) % 1.2;
+        const beat = 1 + .07 * Math.exp(-Math.pow((bt - .1) * 14, 2)) + .05 * Math.exp(-Math.pow((bt - .35) * 14, 2));
+        const r = finC.getBoundingClientRect(), mx = mouse.x - r.left, my = mouse.y - r.top;
+        for (const p of hp) {
+          const tx = fc.x + p.bx * beat, ty = fc.y + p.by * beat;
+          p.vx += (tx - p.x) * .012; p.vy += (ty - p.y) * .012;
+          const dx = p.x - mx, dy = p.y - my, d2 = dx * dx + dy * dy;
+          if (d2 < 9000) { const d = Math.sqrt(d2) || 1, f = (9000 - d2) / 9000 * 2.4; p.vx += dx / d * f; p.vy += dy / d * f; }
+          p.vx *= .86; p.vy *= .86; p.x += p.vx; p.y += p.vy;
+          fin.fillStyle = `rgba(${p.c},${.55 + .45 * Math.sin(t * .003 + p.tw)})`;
+          fin.beginPath(); fin.arc(p.x, p.y, p.s, 0, 7); fin.fill();
+        }
+        for (let i = rockets.length - 1; i >= 0; i--) {
+          const k = rockets[i]; k.x += (k.tx - k.x) * .06; k.y += (k.ty - k.y) * .06;
+          fin.fillStyle = `rgb(${k.c})`; fin.beginPath(); fin.arc(k.x, k.y, 2.6, 0, 7); fin.fill();
+          if (Math.abs(k.ty - k.y) < 4) { explode(k); rockets.splice(i, 1); }
+        }
+        for (let i = fwp.length - 1; i >= 0; i--) {
+          const p = fwp[i]; p.vx *= .98; p.vy = p.vy * .98 + .05; p.x += p.vx; p.y += p.vy; p.a -= p.dec;
+          if (p.a <= 0) { fwp.splice(i, 1); continue; }
+          fin.fillStyle = `rgba(${p.c},${p.a})`; fin.beginPath(); fin.arc(p.x, p.y, 1.9, 0, 7); fin.fill();
+        }
+      }
 
-/* ================= 3D 倾斜 ================= */
-function tilt(el,max=10,scope=el){
- scope.addEventListener('mousemove',e=>{const r=el.getBoundingClientRect(),px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;
-  el.style.setProperty('--ry',((px-.5)*2*max).toFixed(2)+'deg');el.style.setProperty('--rx',((.5-py)*2*max).toFixed(2)+'deg');
-  el.style.setProperty('--mx',(px*100)+'%');el.style.setProperty('--my',(py*100)+'%');el.classList.add('tilting')});
- scope.addEventListener('mouseleave',()=>{el.style.setProperty('--ry','0deg');el.style.setProperty('--rx','0deg');el.classList.remove('tilting')});
-}
-tilt($('#card3d'),9,$('#cardScene'));tilt($('#heroInner'),5,$('#hero'));$$('.t-card').forEach(c=>tilt(c,8));
-$('#fireBtn').addEventListener('click',e=>{for(let i=0;i<6;i++)setTimeout(()=>firework(W*(.15+Math.random()*.7),H*(.12+Math.random()*.4)),i*250);confetti()});
+      /* ---------- 滚动 / 视差 / 导航 ---------- */
+      const secs = $$('[data-sec]'), dots = $$('#sideNav a'), parEls = $$('[data-speed]'), depthEls = $$('[data-depth]');
+      const heroSec = $('#s-hero'), heroContent = $('#heroContent'), progBar = $('#scrollProgress');
+      dots.forEach((d, i) => d.addEventListener('click', e => { e.preventDefault(); secs[i].scrollIntoView({ behavior: 'smooth' }); }));
+      const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) en.target.classList.add('in-view'); }), { threshold: .2 });
+      new IntersectionObserver(es => es.forEach(en => {
+        finVisible = en.isIntersecting;
+        if (finVisible && entered && !fwAuto) { fwAuto = true; for (let i = 0; i < 5; i++) setTimeout(() => launch(), 600 + i * 350); }
+      }), { threshold: .05 }).observe($('#s-finale'));
+      let ticking = false;
+      addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { onScroll(); ticking = false; }); } }, { passive: true });
+      function onScroll() {
+        const max = document.documentElement.scrollHeight - H;
+        progBar.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
+        parEls.forEach(el => {
+          const r = el.closest('[data-sec]').getBoundingClientRect();
+          el.style.transform = `translate3d(0,${(-r.top) * parseFloat(el.dataset.speed)}px,0)`;
+        });
+        const hr = heroSec.getBoundingClientRect();
+        heroContent.style.opacity = Math.max(0, 1 + hr.top / (H * .8));
+        let idx = 0; secs.forEach((s, i) => { if (s.getBoundingClientRect().top < H * .5) idx = i; });
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        tlTarget = calcTl();
+      }
 
-/* ================= 回忆 3D 轮播 ================= */
-const ring=$('#ring'),N=PHOTOS.length,STEP=360/N,R=Math.round(140/Math.tan(Math.PI/N))+90;
-const items=PHOTOS.map((p,i)=>{const it=document.createElement('div');it.className='g-item';it.style.transform=`rotateY(${i*STEP}deg) translateZ(${R}px)`;
- it.innerHTML=`<div class="g-in"><img src="${p.src}" alt="${p.t}" draggable="false"><div class="glare g-glare"></div><div class="g-cap"><em>${String(i+1).padStart(2,'0')}</em><b>${p.t}</b><span>${p.d}</span></div></div>`;
- ring.appendChild(it);const gi=$('.g-in',it);tilt(gi,12);
- gi.addEventListener('mouseenter',e=>burst(e.clientX,e.clientY,8,'spark',3));return it});
-let rot=0,vel=0,snap=null,drag=false,hover=false,lastX=0,moved=0,frontIdx=-1;
-const stage=$('#gStage');
-stage.addEventListener('mouseenter',()=>hover=true);stage.addEventListener('mouseleave',()=>{hover=false;drag=false});
-stage.addEventListener('mousedown',e=>{drag=true;snap=null;lastX=e.clientX;moved=0;vel=0});
-addEventListener('mouseup',()=>drag=false);
-stage.addEventListener('mousemove',e=>{if(!drag)return;const dx=e.clientX-lastX;lastX=e.clientX;moved+=Math.abs(dx);rot+=dx*.28;vel=dx*.28});
-items.forEach((it,i)=>it.addEventListener('click',()=>{if(moved>6)return;if(i===frontIdx)openLB(i);else{const k=Math.round((rot+i*STEP)/360);snap=-i*STEP+k*360}}));
-$('#gPrev').onclick=()=>snap=(Math.round(rot/STEP)+1)*STEP;$('#gNext').onclick=()=>snap=(Math.round(rot/STEP)-1)*STEP;
-function openLB(i){$('#lbImg').src=PHOTOS[i].src;$('#lbCap').textContent=PHOTOS[i].t+' · '+PHOTOS[i].d;$('#lb').classList.add('on')}
-$('#lb').onclick=()=>$('#lb').classList.remove('on');
-function gallery(){
- if(!drag){if(snap!==null){rot+=(snap-rot)*.09;if(Math.abs(snap-rot)<.05){rot=snap;snap=null}}else{rot+=vel+(hover?0:.09);vel*=.93}}
- ring.style.transform=`rotateY(${rot}deg)`;
- items.forEach((it,i)=>{const a=((i*STEP+rot)*Math.PI/180);const d=(Math.cos(a)+1)/2;$('.g-in',it).style.setProperty('--d',d.toFixed(3))});
- const idx=((Math.round(-rot/STEP)%N)+N)%N;
- if(idx!==frontIdx){frontIdx=idx;items.forEach((it,i)=>it.classList.toggle('front',i===idx));
-  $('#gNo').textContent=String(idx+1).padStart(2,'0')+' / '+N;$('#gTitle').textContent=PHOTOS[idx].t}}
+      /* ---------- 主循环 ---------- */
+      function loop(t) {
+        mouse.x += (mouse.tx - mouse.x) * .08; mouse.y += (mouse.ty - mouse.y) * .08;
+        drawBg(t); drawFx();
+        if (entered) {
+          const dx = mouse.x - W / 2, dy = mouse.y - H / 2;
+          depthEls.forEach(el => { const d = +el.dataset.depth; el.style.transform = `translate3d(${dx * d}px,${dy * d}px,0)`; });
+          cR.x += (cR.tx - cR.x) * .08; cR.y += (cR.ty - cR.y) * .08;
+          card.style.setProperty('--rx', cR.x.toFixed(2) + 'deg'); card.style.setProperty('--ry', cR.y.toFixed(2) + 'deg');
+          updateCarousel(t); updateTl();
+          if (finVisible) drawFin(t);
+        }
+        requestAnimationFrame(loop);
+      }
 
-/* ================= Three.js 背景 ================= */
-let three=null;
-try{ if(window.THREE){
- const SPAN=60,renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
- renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);$('#three').appendChild(renderer.domElement);
- const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,100);cam.position.z=12;
- scene.add(new THREE.AmbientLight(0xffe0c0,1.1));
- const dl=new THREE.DirectionalLight(0xfff0d8,3);dl.position.set(5,8,8);scene.add(dl);
- const pl=new THREE.PointLight(0xff6a7a,160,40);pl.position.set(-6,2,6);scene.add(pl);
- const pl2=new THREE.PointLight(0xffb25a,140,40);pl2.position.set(7,-4,6);scene.add(pl2);
- const s=new THREE.Shape(),x=0,y=0;
- s.moveTo(x+.25,y+.25);s.bezierCurveTo(x+.25,y+.25,x+.2,y,x,y);s.bezierCurveTo(x-.3,y,x-.3,y+.35,x-.3,y+.35);
- s.bezierCurveTo(x-.3,y+.55,x-.1,y+.77,x+.25,y+.95);s.bezierCurveTo(x+.6,y+.77,x+.8,y+.55,x+.8,y+.35);
- s.bezierCurveTo(x+.8,y+.35,x+.8,y,x+.5,y);s.bezierCurveTo(x+.35,y,x+.25,y+.25,x+.25,y+.25);
- const geo=new THREE.ExtrudeGeometry(s,{depth:.32,bevelEnabled:true,bevelSize:.07,bevelThickness:.1,bevelSegments:5,curveSegments:28});geo.rotateZ(Math.PI);geo.center();
- const cols=[0xff4d6a,0xff8a5b,0xffc46b,0xff7b9c,0xe8456b,0xffa07a],hearts=[];
- for(let i=0;i<22;i++){
-  const m=new THREE.Mesh(geo,new THREE.MeshPhysicalMaterial({color:cols[i%cols.length],metalness:.25,roughness:.22,clearcoat:1,clearcoatRoughness:.15,emissive:cols[i%cols.length],emissiveIntensity:.18}));
-  const side=Math.random()<.5?-1:1;m.position.set(side*(3.6+Math.random()*5),2-Math.random()*SPAN,-5+Math.random()*7);
-  const sc=.6+Math.random()*1.2;m.scale.setScalar(sc);m.userData={by:m.position.y,sp:.004+Math.random()*.012,ph:Math.random()*6};scene.add(m);hearts.push(m)}
- const cv=document.createElement('canvas');cv.width=cv.height=64;const cx=cv.getContext('2d'),g=cx.createRadialGradient(32,32,0,32,32,32);
- g.addColorStop(0,'rgba(255,230,170,1)');g.addColorStop(.4,'rgba(255,170,100,.5)');g.addColorStop(1,'rgba(255,170,100,0)');cx.fillStyle=g;cx.fillRect(0,0,64,64);
- const cnt=800,pos=new Float32Array(cnt*3);for(let i=0;i<cnt;i++){pos[i*3]=(Math.random()-.5)*30;pos[i*3+1]=6-Math.random()*(SPAN+12);pos[i*3+2]=-10+Math.random()*16}
- const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
- const pts=new THREE.Points(pg,new THREE.PointsMaterial({size:.45,map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.9}));scene.add(pts);
- addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()});
- three=(p,t)=>{const ty=-p*(SPAN-6);cam.position.y+=(ty-cam.position.y)*.06;cam.position.x+=(mx*2.2-cam.position.x)*.04;cam.lookAt(cam.position.x*.3,cam.position.y,0);
-  hearts.forEach((h,i)=>{h.rotation.y+=h.userData.sp;h.rotation.x=Math.sin(t*.0006+h.userData.ph)*.35;h.position.y=h.userData.by+Math.sin(t*.0008+h.userData.ph)*.3});
-  pts.rotation.y=t*.00003;renderer.render(scene,cam)}
-}}catch(e){console.warn('WebGL unavailable',e)}
-
-/* ================= 主循环：视差 / 进度 / 时间线 ================= */
-const par=$$('[data-speed]').map(el=>({el,sec:el.closest('.sec,.t-item,.foot')||el.parentElement,k:parseFloat(el.dataset.speed)}));
-const secIds=['hero','card','gallery','timeline'],dots=$$('#dots a'),tlBox=$('#tl'),tlFill=$('#tlFill'),tItems=$$('.t-item'),prog=$('#prog');
-const start=new Date('2024-04-03T00:00:00');
-function count(){const d=Date.now()-start;$('#cd').textContent=Math.floor(d/864e5);$('#ch').textContent=Math.floor(d/36e5)%24;$('#cm').textContent=Math.floor(d/6e4)%60;$('#cs').textContent=Math.floor(d/1e3)%60}count();setInterval(count,1000);
-function tick(t){
- if(entered){
-  const y=scrollY,max=document.documentElement.scrollHeight-innerHeight,p=max>0?y/max:0;
-  prog.style.width=(p*100)+'%';
-  par.forEach(o=>{const r=o.sec.getBoundingClientRect();if(r.bottom<-300||r.top>innerHeight+300)return;o.el.style.translate=`0 ${((r.top+r.height/2)-innerHeight/2)*o.k}px`});
-  const r=tlBox.getBoundingClientRect();tlFill.style.height=Math.min(Math.max(innerHeight*.55-r.top,0),r.height)+'px';
-  tItems.forEach(it=>{const n=$('.t-node',it).getBoundingClientRect();it.classList.toggle('on',n.top+n.height/2<innerHeight*.62)});
-  let cur=0;secIds.forEach((id,i)=>{if($('#'+id).getBoundingClientRect().top<innerHeight*.5)cur=i});dots.forEach((d,i)=>d.classList.toggle('on',i===cur));
-  gallery();if(three)three(p,t);
- }else if(Math.random()<.07){add({x:Math.random()*W,y:H+20,vx:(Math.random()-.5)*.6,vy:-(1+Math.random()*1.8),decay:.0035,size:8+Math.random()*16,type:'heart',c:COL[Math.random()*4|0]})}
- fxStep();requestAnimationFrame(tick)}
-requestAnimationFrame(tick);
-</script>
+      function resizeAll() {
+        W = innerWidth; H = innerHeight;
+        fit(bgC, bg, W, H); fit(fxC, fx, W, H);
+        initB(); layoutTl(); layoutFin(); onScroll();
+      }
+      addEventListener('resize', resizeAll);
+      resizeAll();
+      requestAnimationFrame(loop);
+    })();
+  </script>
 </body>
+
 </html>
