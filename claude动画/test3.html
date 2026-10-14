@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>莎莉安娜错误信念实验 - 互动版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 交互UI层 */
+        #interaction-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        #interaction-panel {
+            width: 80%;
+            max-width: 900px;
+            background: linear-gradient(135deg, rgba(255, 239, 213, 0.95), rgba(255, 218, 185, 0.95));
+            border-radius: 32px;
+            padding: 48px;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.3);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            animation: panelSlideIn 0.6s ease-out;
+        }
+
+        @keyframes panelSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .teacher-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .teacher-avatar {
+            width: 180px;
+            height: 180px;
+            background: linear-gradient(135deg, #FFB6C1, #FFA07A);
+            border-radius: 50%;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            animation: teacherBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes teacherBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .teacher-speech {
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            font-size: 20px;
+            line-height: 1.6;
+            color: #333;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .choices-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        .choice-button {
+            padding: 32px;
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .choice-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .choice-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .choice-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .choice-blue {
+            background: linear-gradient(135deg, #667eea, #4f5bd5);
+            color: white;
+        }
+
+        .choice-pink {
+            background: linear-gradient(135deg, #FFB6C1, #FF69B4);
+            color: white;
+        }
+
+        /* 标题动画 */
+        #title-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: titleFadeOut 2s ease-out 3s forwards;
+        }
+
+        @keyframes titleFadeOut {
+            to {
+                opacity: 0;
+                pointer-events: none;
+            }
+        }
+
+        #title-screen h1 {
+            font-size: 56px;
+            color: white;
+            margin-bottom: 24px;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: titleBounce 1s ease-out;
+        }
+
+        #title-screen p {
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.9);
+            animation: titleBounce 1s ease-out 0.3s backwards;
+        }
+
+        @keyframes titleBounce {
+            0% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            60% {
+                transform: translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 字幕系统 */
+        #subtitle {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 999px;
+            font-size: 20px;
+            z-index: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            max-width: 80%;
+            text-align: center;
+        }
+
+        #subtitle.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- 标题屏幕 -->
+    <div id="title-screen">
+        <h1>🎈 莎莉安娜错误信念实验 🎈</h1>
+        <p>一个关于理解他人想法的故事</p>
+    </div>
+
+    <!-- 3D画布容器 -->
+    <div id="canvas-container"></div>
+
+    <!-- 字幕 -->
+    <div id="subtitle"></div>
+
+    <!-- 交互面板 -->
+    <div id="interaction-overlay">
+        <div id="interaction-panel">
+            <div class="teacher-section">
+                <div class="teacher-avatar">👩‍🏫</div>
+                <div class="teacher-speech" id="teacher-speech">
+                    你认为珍珍会在哪个盒子里找球呢？
+                </div>
+            </div>
+            <div class="choices-section">
+                <button class="choice-button choice-blue" onclick="handleChoice('blue')">
+                    🔵 蓝色盒子
+                </button>
+                <button class="choice-button choice-pink" onclick="handleChoice('pink')">
+                    🩷 粉色盒子
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        // ========== 全局变量 ==========
+        let scene, camera, renderer;
+        let yuanyuan, zhenzhen, ball; // 角色和球
+        let pinkBox, blueBox; // 两个盒子
+        let room; // 房间
+        let door; // 门
+        let currentAct = 0; // 当前剧幕
+        let animationId; // 动画帧ID
+        let isInteractionActive = false;
+
+        // ========== 初始化场景 ==========
+        function initScene() {
+            // 创建场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xFFF5E6);
+            scene.fog = new THREE.Fog(0xFFF5E6, 10, 50);
+
+            // 创建摄像机
+            camera = new THREE.PerspectiveCamera(
+                60,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 4, 12);
+            camera.lookAt(0, 2, 0);
+
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // 创建灯光
+            createLights();
+
+            // 创建房间
+            createRoom();
+
+            // 创建角色
+            createCharacters();
+
+            // 创建盒子
+            createBoxes();
+
+            // 创建球
+            createBall();
+
+            // 创建门
+            createDoor();
+
+            // 窗口自适应
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // ========== 创建灯光 ==========
+        function createLights() {
+            // 环境光
+            const ambientLight = new THREE.AmbientLight(0xFFE4B5, 0.6);
+            scene.add(ambientLight);
+
+            // 主光源（暖黄色）
+            const mainLight = new THREE.DirectionalLight(0xFFD700, 0.8);
+            mainLight.position.set(5, 8, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+
+            // 补光
+            const fillLight = new THREE.PointLight(0xFFB6C1, 0.5);
+            fillLight.position.set(-5, 3, 3);
+            scene.add(fillLight);
+
+            // 地板反射光
+            const groundLight = new THREE.PointLight(0xFFA07A, 0.3);
+            groundLight.position.set(0, 0.5, 0);
+            scene.add(groundLight);
+        }
+
+        // ========== 创建房间 ==========
+        function createRoom() {
+            room = new THREE.Group();
+
+            // 地板（木质纹理）
+            const floorGeometry = new THREE.PlaneGeometry(20, 20);
+            const floorMaterial = new THREE.MeshStandardMaterial({
+                color: 0xDEB887,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            room.add(floor);
+
+            // 后墙
+            const wallGeometry = new THREE.PlaneGeometry(20, 10);
+            const wallMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFFE4C4,
+                side: THREE.DoubleSide
+            });
+            const backWall = new THREE.Mesh(wallGeometry, wallMaterial);
+            backWall.position.set(0, 5, -10);
+            room.add(backWall);
+
+            // 地毯
+            const carpetGeometry = new THREE.CircleGeometry(3, 32);
+            const carpetMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFF6B9D,
+                roughness: 1
+            });
+            const carpet = new THREE.Mesh(carpetGeometry, carpetMaterial);
+            carpet.rotation.x = -Math.PI / 2;
+            carpet.position.y = 0.01;
+            carpet.receiveShadow = true;
+            room.add(carpet);
+
+            scene.add(room);
+        }
+
+        // ========== 创建角色 ==========
+        function createCharacters() {
+            // 圆圆（男孩）- 蓝色系
+            yuanyuan = new THREE.Group();
+            
+            // 身体
+            const bodyGeometry = new THREE.CapsuleGeometry(0.4, 0.8, 8, 16);
+            const boyMaterial = new THREE.MeshToonMaterial({ color: 0x87CEEB });
+            const body = new THREE.Mesh(bodyGeometry, boyMaterial);
+            body.castShadow = true;
+            yuanyuan.add(body);
+
+            // 头部
+            const headGeometry = new THREE.SphereGeometry(0.4, 32, 32);
+            const skinMaterial = new THREE.MeshToonMaterial({ color: 0xFFDBAC });
+            const head = new THREE.Mesh(headGeometry, skinMaterial);
+            head.position.y = 1.2;
+            head.castShadow = true;
+            yuanyuan.add(head);
+
+            // 眼睛
+            const eyeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.15, 1.25, 0.35);
+            yuanyuan.add(leftEye);
+            const rightEye = leftEye.clone();
+            rightEye.position.x = 0.15;
+            yuanyuan.add(rightEye);
+
+            // 微笑
+            const smileGeometry = new THREE.TorusGeometry(0.15, 0.03, 8, 16, Math.PI);
+            const smileMaterial = new THREE.MeshBasicMaterial({ color: 0xFF6B6B });
+            const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+            smile.position.set(0, 1.05, 0.35);
+            smile.rotation.x = Math.PI;
+            yuanyuan.add(smile);
+
+            yuanyuan.position.set(-2, 1, 0);
+            scene.add(yuanyuan);
+
+            // 珍珍（女孩）- 粉色系
+            zhenzhen = new THREE.Group();
+            
+            const girlMaterial = new THREE.MeshToonMaterial({ color: 0xFFB6C1 });
+            const bodyGirl = new THREE.Mesh(bodyGeometry, girlMaterial);
+            bodyGirl.castShadow = true;
+            zhenzhen.add(bodyGirl);
+
+            const headGirl = new THREE.Mesh(headGeometry, skinMaterial);
+            headGirl.position.y = 1.2;
+            headGirl.castShadow = true;
+            zhenzhen.add(headGirl);
+
+            const leftEyeGirl = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEyeGirl.position.set(-0.15, 1.25, 0.35);
+            zhenzhen.add(leftEyeGirl);
+            const rightEyeGirl = leftEyeGirl.clone();
+            rightEyeGirl.position.x = 0.15;
+            zhenzhen.add(rightEyeGirl);
+
+            const smileGirl = new THREE.Mesh(smileGeometry, smileMaterial);
+            smileGirl.position.set(0, 1.05, 0.35);
+            smileGirl.rotation.x = Math.PI;
+            zhenzhen.add(smileGirl);
+
+            // 头发（蝴蝶结）
+            const hairGeometry = new THREE.BoxGeometry(0.6, 0.2, 0.2);
+            const hairMaterial = new THREE.MeshToonMaterial({ color: 0xFF1493 });
+            const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+            hair.position.set(0, 1.5, 0);
+            zhenzhen.add(hair);
+
+            zhenzhen.position.set(2, 1, 0);
+            scene.add(zhenzhen);
+        }
+
+        // ========== 创建盒子 ==========
+        function createBoxes() {
+            // 粉色盒子
+            const boxGeometry = new THREE.BoxGeometry(1, 0.8, 1);
+            const pinkMaterial = new THREE.MeshToonMaterial({ color: 0xFFB6C1 });
+            pinkBox = new THREE.Mesh(boxGeometry, pinkMaterial);
+            pinkBox.position.set(-3, 0.4, 3);
+            pinkBox.castShadow = true;
+            pinkBox.receiveShadow = true;
+            scene.add(pinkBox);
+
+            // 粉色盒子盖子
+            const lidGeometry = new THREE.BoxGeometry(1.1, 0.1, 1.1);
+            const pinkLid = new THREE.Mesh(lidGeometry, pinkMaterial);
+            pinkLid.position.set(0, 0.45, 0);
+            pinkBox.add(pinkLid);
+            pinkBox.userData.lid = pinkLid;
+            pinkBox.userData.isOpen = false;
+
+            // 蓝色盒子
+            const blueMaterial = new THREE.MeshToonMaterial({ color: 0x4169E1 });
+            blueBox = new THREE.Mesh(boxGeometry, blueMaterial);
+            blueBox.position.set(3, 0.4, 3);
+            blueBox.castShadow = true;
+            blueBox.receiveShadow = true;
+            scene.add(blueBox);
+
+            const blueLid = new THREE.Mesh(lidGeometry, blueMaterial);
+            blueLid.position.set(0, 0.45, 0);
+            blueBox.add(blueLid);
+            blueBox.userData.lid = blueLid;
+            blueBox.userData.isOpen = false;
+        }
+
+        // ========== 创建球 ==========
+        function createBall() {
+            const ballGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+            const ballMaterial = new THREE.MeshToonMaterial({ color: 0xFFD700 });
+            ball = new THREE.Mesh(ballGeometry, ballMaterial);
+            ball.position.set(0, 0.3, 0);
+            ball.castShadow = true;
+            scene.add(ball);
+        }
+
+        // ========== 创建门 ==========
+        function createDoor() {
+            const doorGeometry = new THREE.BoxGeometry(2, 4, 0.2);
+            const doorMaterial = new THREE.MeshToonMaterial({ color: 0x8B4513 });
+            door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(7, 2, -5);
+            door.castShadow = true;
+            scene.add(door);
+        }
+
+        // ========== 动画辅助函数 ==========
+        function showSubtitle(text, duration = 3000) {
+            const subtitle = document.getElementById('subtitle');
+            subtitle.textContent = text;
+            subtitle.classList.add('show');
+            setTimeout(() => {
+                subtitle.classList.remove('show');
+            }, duration);
+        }
+
+        function animatePosition(obj, targetPos, duration, onComplete) {
+            const startPos = obj.position.clone();
+            const startTime = Date.now();
+
+            function update() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = easeInOutCubic(progress);
+
+                obj.position.lerpVectors(startPos, targetPos, eased);
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else if (onComplete) {
+                    onComplete();
+                }
+            }
+            update();
+        }
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function openBox(box, onComplete) {
+            const lid = box.userData.lid;
+            box.userData.isOpen = true;
+            
+            const startRot = lid.rotation.x;
+            const targetRot = -Math.PI / 2;
+            const duration = 500;
+            const startTime = Date.now();
+
+            function update() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                lid.rotation.x = startRot + (targetRot - startRot) * easeInOutCubic(progress);
+                lid.position.z = progress * 0.6;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else if (onComplete) {
+                    onComplete();
+                }
+            }
+            update();
+        }
+
+        function closeBox(box, onComplete) {
+            const lid = box.userData.lid;
+            box.userData.isOpen = false;
+            
+            const startRot = lid.rotation.x;
+            const targetRot = 0;
+            const duration = 500;
+            const startTime = Date.now();
+
+            function update() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                lid.rotation.x = startRot + (targetRot - startRot) * easeInOutCubic(progress);
+                lid.position.z = (1 - progress) * 0.6;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else if (onComplete) {
+                    onComplete();
+                }
+            }
+            update();
+        }
+
+        // ========== 剧情控制 ==========
+        function startStory() {
+            currentAct = 1;
+            act1();
+        }
+
+        // 第一幕：玩耍
+        function act1() {
+            showSubtitle('圆圆和珍珍正在开心地玩球', 3000);
+            
+            // 传球动画
+            let passCount = 0;
+            function passBall() {
+                if (passCount >= 4) {
+                    setTimeout(() => {
+                        showSubtitle('珍珍：我去上个厕所', 2000);
+                        setTimeout(act1Part2, 2500);
+                    }, 1000);
+                    return;
+                }
+
+                const target = passCount % 2 === 0 ? zhenzhen : yuanyuan;
+                const targetPos = target.position.clone();
+                targetPos.y = 0.3;
+
+                animatePosition(ball, targetPos, 800, () => {
+                    passCount++;
+                    setTimeout(passBall, 500);
+                });
+            }
+            passBall();
+        }
+
+        // 第一幕第二部分：珍珍放球离开
+        function act1Part2() {
+            // 球移动到珍珍手中
+            const zhenzhenHand = zhenzhen.position.clone();
+            zhenzhenHand.y = 1.5;
+            
+            animatePosition(ball, zhenzhenHand, 500, () => {
+                // 珍珍走向粉色盒子
+                const pinkBoxPos = pinkBox.position.clone();
+                pinkBoxPos.y = 1;
+                
+                animatePosition(zhenzhen, pinkBoxPos, 1000, () => {
+                    // 打开粉色盒子
+                    openBox(pinkBox, () => {
+                        // 球放入盒子
+                        const ballInBox = pinkBox.position.clone();
+                        ballInBox.y = 0.3;
+                        
+                        animatePosition(ball, ballInBox, 500, () => {
+                            ball.visible = false; // 球被遮挡
+                            
+                            // 关闭盒子
+                            closeBox(pinkBox, () => {
+                                showSubtitle('珍珍把球放进了粉色盒子', 2000);
+                                
+                                setTimeout(() => {
+                                    // 珍珍走向门
+                                    const doorPos = door.position.clone();
+                                    doorPos.y = 1;
+                                    doorPos.x -= 1;
+                                    
+                                    animatePosition(zhenzhen, doorPos, 1500, () => {
+                                        // 珍珍消失（出门）
+                                        zhenzhen.visible = false;
+                                        showSubtitle('珍珍离开了房间', 2000);
+                                        
+                                        setTimeout(act2, 2500);
+                                    });
+                                }, 2000);
+                            });
+                        });
+                    });
+                });
+            });
+        }
+
+        // 第二幕：圆圆移动球
+        function act2() {
+            showSubtitle('珍珍走后，圆圆偷偷做了一件事...', 2000);
+            
+            setTimeout(() => {
+                // 圆圆走向粉色盒子
+                const pinkBoxPos = pinkBox.position.clone();
+                pinkBoxPos.y = 1;
+                
+                animatePosition(yuanyuan, pinkBoxPos, 1000, () => {
+                    // 打开粉色盒子
+                    openBox(pinkBox, () => {
+                        showSubtitle('圆圆打开了粉色盒子', 1500);
+                        
+                        setTimeout(() => {
+                            // 球出现并移动到圆圆手中
+                            ball.visible = true;
+                            const yuanyuanHand = yuanyuan.position.clone();
+                            yuanyuanHand.y = 1.5;
+                            
+                            animatePosition(ball, yuanyuanHand, 500, () => {
+                                // 关闭粉色盒子
+                                closeBox(pinkBox, () => {
+                                    // 圆圆走向蓝色盒子
+                                    const blueBoxPos = blueBox.position.clone();
+                                    blueBoxPos.y = 1;
+                                    
+                                    animatePosition(yuanyuan, blueBoxPos, 1200, () => {
+                                        // 打开蓝色盒子
+                                        openBox(blueBox, () => {
+                                            showSubtitle('圆圆把球放进了蓝色盒子', 2000);
+                                            
+                                            setTimeout(() => {
+                                                // 球进入蓝色盒子
+                                                const ballInBlueBox = blueBox.position.clone();
+                                                ballInBlueBox.y = 0.3;
+                                                
+                                                animatePosition(ball, ballInBlueBox, 500, () => {
+                                                    ball.visible = false;
+                                                    
+                                                    // 关闭蓝色盒子
+                                                    closeBox(blueBox, () => {
+                                                        showSubtitle('珍珍并不知道球被移动了', 3000);
+                                                        
+                                                        setTimeout(act3, 3500);
+                                                    });
+                                                });
+                                            }, 2000);
+                                        });
+                                    });
+                                });
+                            });
+                        }, 1500);
+                    });
+                });
+            }, 2500);
+        }
+
+        // 第三幕：珍珍回来 + 交互
+        function act3() {
+            // 珍珍从门口回来
+            zhenzhen.visible = true;
+            const doorPos = door.position.clone();
+            doorPos.y = 1;
+            doorPos.x -= 1;
+            zhenzhen.position.copy(doorPos);
+            
+            const centerPos = new THREE.Vector3(0, 1, 2);
+            
+            animatePosition(zhenzhen, centerPos, 1500, () => {
+                showSubtitle('珍珍：我们继续玩球吧！', 2000);
+                
+                setTimeout(() => {
+                    // 显示交互界面
+                    showInteraction();
+                }, 2500);
+            });
+        }
+
+        // 显示交互面板
+        function showInteraction() {
+            isInteractionActive = true;
+            document.getElementById('interaction-overlay').style.display = 'flex';
+        }
+
+        // 处理用户选择
+        window.handleChoice = function(choice) {
+            const teacherSpeech = document.getElementById('teacher-speech');
+            
+            if (choice === 'blue') {
+                // 选择错误
+                console.log('错误');
+                teacherSpeech.textContent = '不对哦，再仔细看看，珍珍把球放到粉色盒子里就出去上厕所了。她不知道圆圆后来移动了球！';
+                
+                setTimeout(() => {
+                    document.getElementById('interaction-overlay').style.display = 'none';
+                    showSubtitle('让我们重新看一遍这个故事', 3000);
+                    
+                    setTimeout(() => {
+                        resetScene();
+                        startStory();
+                    }, 3500);
+                }, 3000);
+                
+            } else if (choice === 'pink') {
+                // 选择正确
+                console.log('正确');
+                teacherSpeech.textContent = '选对了，你真棒！珍珍最后看到球在粉色盒子里，她不知道后来球被移动了。';
+                
+                setTimeout(() => {
+                    document.getElementById('interaction-overlay').style.display = 'none';
+                    isInteractionActive = false;
+                    showSubtitle('让我们看看接下来发生了什么', 2000);
+                    
+                    setTimeout(act4, 2500);
+                }, 3000);
+            }
+        };
+
+        // 第四幕：结局
+        function act4() {
+            // 珍珍走向粉色盒子
+            const pinkBoxPos = pinkBox.position.clone();
+            pinkBoxPos.y = 1;
+            
+            animatePosition(zhenzhen, pinkBoxPos, 1000, () => {
+                showSubtitle('珍珍打开粉色盒子', 1500);
+                
+                setTimeout(() => {
+                    // 打开粉色盒子
+                    openBox(pinkBox, () => {
+                        setTimeout(() => {
+                            showSubtitle('咦？球不见了！', 2000);
+                            
+                            // 珍珍转向圆圆（疑惑）
+                            setTimeout(() => {
+                                zhenzhen.rotation.y = Math.PI / 4;
+                                
+                                setTimeout(() => {
+                                    // 圆圆走向蓝色盒子
+                                    const blueBoxPos = blueBox.position.clone();
+                                    blueBoxPos.y = 1;
+                                    
+                                    animatePosition(yuanyuan, blueBoxPos, 1000, () => {
+                                        showSubtitle('圆圆露出调皮的笑容', 1500);
+                                        
+                                        setTimeout(() => {
+                                            // 打开蓝色盒子
+                                            openBox(blueBox, () => {
+                                                // 球出现
+                                                ball.visible = true;
+                                                const ballPos = blueBox.position.clone();
+                                                ballPos.y = 0.8;
+                                                ball.position.copy(ballPos);
+                                                
+                                                showSubtitle('原来球在这里！', 2000);
+                                                
+                                                setTimeout(() => {
+                                                    showSubtitle('珍珍恍然大悟，两人继续开心玩耍', 3000);
+                                                    
+                                                    // 结束动画
+                                                    setTimeout(() => {
+                                                        showSubtitle('🎉 实验完成！你理解了"错误信念"的概念 🎉', 5000);
+                                                        
+                                                        // 摄像机拉远
+                                                        const finalCamPos = new THREE.Vector3(0, 8, 18);
+                                                        animatePosition(camera, finalCamPos, 3000, () => {
+                                                            setTimeout(() => {
+                                                                showSubtitle('🔄 点击页面重新开始', 999999);
+                                                                document.addEventListener('click', () => {
+                                                                    location.reload();
+                                                                }, { once: true });
+                                                            }, 3000);
+                                                        });
+                                                    }, 3500);
+                                                }, 2500);
+                                            });
+                                        }, 1500);
+                                    });
+                                }, 1500);
+                            }, 2000);
+                        }, 1000);
+                    });
+                }, 1500);
+            });
+        }
+
+        // ========== 重置场景 ==========
+        function resetScene() {
+            // 重置角色位置
+            yuanyuan.position.set(-2, 1, 0);
+            yuanyuan.rotation.y = 0;
+            yuanyuan.visible = true;
+            
+            zhenzhen.position.set(2, 1, 0);
+            zhenzhen.rotation.y = 0;
+            zhenzhen.visible = true;
+            
+            // 重置球
+            ball.position.set(0, 0.3, 0);
+            ball.visible = true;
+            
+            // 重置盒子
+            if (pinkBox.userData.isOpen) {
+                pinkBox.userData.lid.rotation.x = 0;
+                pinkBox.userData.lid.position.z = 0;
+                pinkBox.userData.isOpen = false;
+            }
+            
+            if (blueBox.userData.isOpen) {
+                blueBox.userData.lid.rotation.x = 0;
+                blueBox.userData.lid.position.z = 0;
+                blueBox.userData.isOpen = false;
+            }
+            
+            // 重置摄像机
+            camera.position.set(0, 4, 12);
+            camera.lookAt(0, 2, 0);
+        }
+
+        // ========== 渲染循环 ==========
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            // 角色呼吸动画
+            if (yuanyuan.visible) {
+                yuanyuan.position.y = 1 + Math.sin(Date.now() * 0.002) * 0.05;
+            }
+            if (zhenzhen.visible) {
+                zhenzhen.position.y = 1 + Math.sin(Date.now() * 0.002 + Math.PI) * 0.05;
+            }
+            
+            // 球悬浮效果（当可见时）
+            if (ball.visible && ball.position.y < 1) {
+                ball.rotation.y += 0.02;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // ========== 窗口调整 ==========
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // ========== 启动 ==========
+        window.addEventListener('load', () => {
+            initScene();
+            animate();
+            
+            // 5秒后开始故事（标题显示完毕）
+            setTimeout(() => {
+                startStory();
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

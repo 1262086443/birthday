@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>珍珍与圆圆的小秘密 · 错误信念实验（Three.js 互动动画）</title>
+  <style>
+    /* ========== 全局样式 ========== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #ffe3c2;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* ========== 开场标题 ========== */
+    #title {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: radial-gradient(circle at 50% 40%, rgba(255, 236, 200, .95), rgba(255, 200, 150, .98));
+      transition: opacity .9s ease;
+      color: #6b3f22;
+    }
+
+    #title h1 {
+      font-size: clamp(34px, 6vw, 76px);
+      letter-spacing: 4px;
+      text-shadow: 0 6px 24px rgba(255, 150, 80, .35);
+    }
+
+    #title p {
+      margin-top: 14px;
+      font-size: clamp(14px, 1.6vw, 20px);
+      opacity: .85;
+      max-width: 640px;
+      line-height: 1.7;
+      padding: 0 20px;
+    }
+
+    .btn-main {
+      margin-top: 34px;
+      padding: 18px 56px;
+      font-size: 22px;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #ffb347, #ff7b54);
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 2px;
+      box-shadow: 0 12px 30px rgba(255, 120, 60, .45);
+      transition: transform .25s, box-shadow .25s;
+    }
+
+    .btn-main:hover {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 18px 40px rgba(255, 120, 60, .55);
+    }
+
+    .hidden {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* ========== 字幕（人物对话） ========== */
+    #caption {
+      position: fixed;
+      left: 50%;
+      bottom: 7vh;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 20;
+      max-width: 80vw;
+      padding: 16px 28px;
+      border-radius: 20px;
+      font-size: clamp(16px, 2.2vw, 26px);
+      color: #5a3418;
+      background: rgba(255, 250, 240, .82);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, .7);
+      box-shadow: 0 10px 40px rgba(120, 60, 20, .18);
+      opacity: 0;
+      transition: opacity .35s, transform .35s;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #caption.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #caption .who {
+      padding: 4px 12px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: .8em;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* ========== 顶部重点提示 ========== */
+    #note {
+      position: fixed;
+      top: 4vh;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      z-index: 20;
+      pointer-events: none;
+      padding: 12px 26px;
+      border-radius: 999px;
+      font-size: clamp(14px, 1.8vw, 22px);
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(255, 140, 80, .92), rgba(255, 100, 120, .92));
+      box-shadow: 0 10px 30px rgba(255, 100, 80, .4);
+      opacity: 0;
+      transition: opacity .4s, transform .4s;
+    }
+
+    #note.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ========== 交互选择界面（玻璃拟态） ========== */
+    #choice {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(90, 50, 30, .25);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .5s;
+    }
+
+    #choice.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .panel {
+      width: 78vw;
+      height: 72vh;
+      min-height: 420px;
+      border-radius: 36px;
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      overflow: hidden;
+      background: linear-gradient(145deg, rgba(255, 250, 240, .78), rgba(255, 230, 205, .62));
+      border: 2px solid rgba(255, 255, 255, .85);
+      box-shadow: 0 30px 90px rgba(120, 60, 20, .35), inset 0 1px 0 rgba(255, 255, 255, .9);
+      backdrop-filter: blur(24px);
+      transform: scale(.9);
+      transition: transform .5s cubic-bezier(.2, 1.4, .4, 1);
+    }
+
+    #choice.show .panel {
+      transform: scale(1);
+    }
+
+    .panel.shake {
+      animation: shake .6s;
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0)
+      }
+
+      20% {
+        transform: translateX(-14px)
+      }
+
+      40% {
+        transform: translateX(12px)
+      }
+
+      60% {
+        transform: translateX(-8px)
+      }
+
+      80% {
+        transform: translateX(6px)
+      }
+    }
+
+    .teacher {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      gap: 18px;
+    }
+
+    .teacher svg {
+      width: min(34vh, 100%);
+      height: auto;
+      filter: drop-shadow(0 12px 24px rgba(120, 60, 20, .25));
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-10px)
+      }
+    }
+
+    .bubble {
+      position: relative;
+      padding: 18px 24px;
+      border-radius: 22px;
+      background: #fff;
+      color: #5a3418;
+      font-size: clamp(16px, 1.9vw, 24px);
+      line-height: 1.6;
+      box-shadow: 0 10px 30px rgba(120, 60, 20, .15);
+      max-width: 92%;
+      text-align: center;
+      min-height: 70px;
+    }
+
+    .bubble::before {
+      content: "";
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      margin-left: -12px;
+      border: 12px solid transparent;
+      border-bottom-color: #fff;
+      border-top: 0;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 26px;
+      padding: 40px 50px 40px 20px;
+    }
+
+    .options h3 {
+      color: #8a5634;
+      font-size: clamp(14px, 1.5vw, 18px);
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-align: center;
+      opacity: .8;
+    }
+
+    .opt {
+      flex: 0 0 auto;
+      height: 26vh;
+      min-height: 120px;
+      border-radius: 28px;
+      border: 3px solid rgba(255, 255, 255, .9);
+      cursor: pointer;
+      font-size: clamp(24px, 3.4vw, 46px);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+      transition: transform .25s, box-shadow .25s, filter .25s;
+    }
+
+    .opt:hover {
+      transform: translateY(-5px) scale(1.03);
+      filter: brightness(1.06);
+    }
+
+    .opt:active {
+      transform: scale(.98);
+    }
+
+    .opt:disabled {
+      cursor: default;
+      filter: grayscale(.4);
+      transform: none;
+    }
+
+    .opt .cube {
+      width: 1.2em;
+      height: 1.2em;
+      border-radius: .25em;
+      background: rgba(255, 255, 255, .35);
+      border: 2px solid rgba(255, 255, 255, .8);
+      box-shadow: inset 0 -0.3em 0 rgba(0, 0, 0, .12);
+    }
+
+    #btnBlue {
+      background: linear-gradient(135deg, #5ec3ff, #3b7dff);
+      box-shadow: 0 16px 40px rgba(60, 130, 255, .45);
+    }
+
+    #btnPink {
+      background: linear-gradient(135deg, #ff9ec8, #ff5c9a);
+      box-shadow: 0 16px 40px rgba(255, 90, 150, .45);
+    }
+
+    /* ========== 结束总结 ========== */
+    #end {
+      position: fixed;
+      inset: 0;
+      z-index: 35;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(90, 50, 30, .25);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .8s;
+    }
+
+    #end.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .endcard {
+      width: min(760px, 86vw);
+      padding: 44px 48px;
+      border-radius: 34px;
+      text-align: center;
+      color: #5a3418;
+      background: linear-gradient(145deg, rgba(255, 250, 240, .85), rgba(255, 230, 205, .7));
+      border: 2px solid rgba(255, 255, 255, .85);
+      box-shadow: 0 30px 90px rgba(120, 60, 20, .35);
+      backdrop-filter: blur(24px);
+    }
+
+    .endcard h2 {
+      font-size: clamp(28px, 4vw, 44px);
+      margin-bottom: 16px;
+    }
+
+    .endcard p {
+      font-size: clamp(15px, 1.7vw, 20px);
+      line-height: 1.8;
+    }
+
+    .endcard .key {
+      margin: 18px 0;
+      padding: 16px 20px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .75);
+      font-weight: 700;
+      color: #c2562b;
+      font-size: clamp(16px, 1.9vw, 24px);
+    }
+
+    /* ========== HUD ========== */
+    #hud {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 25;
+      display: flex;
+      gap: 10px;
+    }
+
+    #hud button {
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, .8);
+      background: rgba(255, 250, 240, .7);
+      backdrop-filter: blur(10px);
+      color: #6b3f22;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 6px 18px rgba(120, 60, 20, .15);
+    }
+
+    #hud button:hover {
+      background: #fff;
+    }
+
+    /* ========== 特效层：漂浮表情、彩带 ========== */
+    #fx {
+      position: fixed;
+      inset: 0;
+      z-index: 22;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .emo {
+      position: absolute;
+      font-size: 36px;
+      animation: rise 1.6s ease-out forwards;
+    }
+
+    @keyframes rise {
+      0% {
+        transform: translateY(0) scale(.6);
+        opacity: 0
+      }
+
+      20% {
+        opacity: 1
+      }
+
+      100% {
+        transform: translateY(-140px) scale(1.2);
+        opacity: 0
+      }
+    }
+
+    .confetti {
+      position: absolute;
+      top: -20px;
+      width: 12px;
+      height: 18px;
+      border-radius: 3px;
+      animation: fall linear forwards;
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(0) rotate(0)
+      }
+
+      100% {
+        transform: translateY(110vh) rotate(720deg)
+      }
+    }
+
+    @media (max-width: 760px) {
+      .panel {
+        grid-template-columns: 1fr;
+        height: 86vh;
+        width: 92vw;
+        overflow-y: auto;
+      }
+
+      .options {
+        padding: 10px 24px 30px;
+      }
+
+      .opt {
+        height: 90px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 开场标题 -->
+  <div id="title">
+    <h1>🎈 珍珍与圆圆的小秘密</h1>
+    <p>一个 Pixar 风格的互动小剧场，改编自经典儿童心理学实验「莎莉—安娜错误信念任务」。<br>请仔细观察：谁看到了什么？谁又没有看到？</p>
+    <button class="btn-main" id="startBtn">开始实验 ▶</button>
+  </div>
+
+  <!-- 字幕 -->
+  <div id="caption"><span class="who"></span><span class="txt"></span></div>
+  <!-- 顶部重点提示 -->
+  <div id="note"></div>
+  <!-- 特效层 -->
+  <div id="fx"></div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <button id="musicBtn">🔊 音乐：开</button>
+    <button id="replayBtn">↻ 重新播放</button>
+  </div>
+
+  <!-- 认知选择交互界面 -->
+  <div id="choice">
+    <div class="panel" id="panel">
+      <div class="teacher">
+        <!-- 卡通虚拟引导师（内联 SVG） -->
+        <svg viewBox="0 0 220 260" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="110" cy="250" rx="70" ry="8" fill="rgba(0,0,0,.08)" />
+          <path d="M50 250 Q50 170 110 165 Q170 170 170 250 Z" fill="#f4a261" />
+          <path d="M95 170 L110 200 L125 170 Z" fill="#ffe8d6" />
+          <circle cx="110" cy="190" r="4" fill="#ff7b54" />
+          <circle cx="110" cy="205" r="4" fill="#ff7b54" />
+          <circle cx="110" cy="100" r="62" fill="#ffd9b8" />
+          <path d="M48 95 Q50 40 110 38 Q170 40 172 95 Q150 70 110 72 Q70 70 48 95 Z" fill="#7a4a2a" />
+          <circle cx="110" cy="38" r="22" fill="#7a4a2a" />
+          <circle cx="86" cy="100" r="17" fill="none" stroke="#8a5634" stroke-width="4" />
+          <circle cx="134" cy="100" r="17" fill="none" stroke="#8a5634" stroke-width="4" />
+          <line x1="103" y1="100" x2="117" y2="100" stroke="#8a5634" stroke-width="4" />
+          <circle cx="86" cy="100" r="7" fill="#3b2314" />
+          <circle cx="134" cy="100" r="7" fill="#3b2314" />
+          <circle cx="89" cy="97" r="2.5" fill="#fff" />
+          <circle cx="137" cy="97" r="2.5" fill="#fff" />
+          <path d="M70 82 Q86 74 100 82" stroke="#7a4a2a" stroke-width="4" fill="none" stroke-linecap="round" />
+          <path d="M120 82 Q134 74 150 82" stroke="#7a4a2a" stroke-width="4" fill="none" stroke-linecap="round" />
+          <circle cx="72" cy="122" r="9" fill="#ffb0a0" opacity=".7" />
+          <circle cx="148" cy="122" r="9" fill="#ffb0a0" opacity=".7" />
+          <path d="M88 128 Q110 150 132 128" stroke="#c2562b" stroke-width="5" fill="none" stroke-linecap="round" />
+          <circle cx="60" cy="235" r="14" fill="#ffd9b8" />
+          <circle cx="160" cy="235" r="14" fill="#ffd9b8" />
+        </svg>
+        <div class="bubble" id="teacherText">你认为珍珍会在哪个盒子里找球呢？</div>
+      </div>
+      <div class="options">
+        <h3>请点击你的答案</h3>
+        <button class="opt" id="btnBlue"><span class="cube"></span>蓝色盒子</button>
+        <button class="opt" id="btnPink"><span class="cube"></span>粉色盒子</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结束总结 -->
+  <div id="end">
+    <div class="endcard">
+      <h2>🎉 实验完成！</h2>
+      <p>珍珍离开房间时，球在<b style="color:#ff5c9a">粉色盒子</b>里；圆圆偷偷把球换到了<b style="color:#3b7dff">蓝色盒子</b>。<br>你看见了全部过程，但珍珍没有看见。
+      </p>
+      <div class="key">一个人只能知道自己看到的事情，<br>而不能知道别人不知道的信息。</div>
+      <p>这就是心理学中的「心理理论」(Theory of Mind)：理解别人的想法可能和自己不同。</p>
+      <button class="btn-main" id="againBtn">再看一遍 ↻</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    /* =====================================================================
+     *  目录
+     *  1. 迷你补间动画引擎（Tween）
+     *  2. 音频系统（Web Audio API 合成 BGM 与音效）
+     *  3. 场景 / 渲染器 / 相机 / 灯光
+     *  4. 卧室建模（地板、墙、床、书架、玩具、门、盒子）
+     *  5. 卡通角色类 Kid（表情、走路、拿球）
+     *  6. UI 辅助（字幕、提示、选择界面、特效）
+     *  7. 剧情脚本（第一幕 → 结尾）
+     *  8. 渲染主循环
+     * ===================================================================== */
+
+    /* ---------------------------------------------------------------------
+     * 1. 迷你补间动画引擎：所有动画都基于 Promise，可以用 async/await 串联剧情
+     * ------------------------------------------------------------------- */
+    const Tweens = [];
+    const Ease = {
+      linear: t => t,
+      inOut: t => t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+      out: t => 1 - Math.pow(1 - t, 3),
+      back: t => { const s = 1.4; return 1 + (--t) * t * ((s + 1) * t + s); },  // 回弹感
+      bounce: t => Math.sin(t * Math.PI),
+    };
+    function tween(obj, to, dur, ease = Ease.inOut, onUpdate) {
+      return new Promise((res, rej) => {
+        const from = {};
+        for (const k in to) from[k] = obj[k];
+        Tweens.push({ obj, from, to, dur: Math.max(1, dur), ease, el: 0, res, rej, onUpdate });
+      });
+    }
+    const wait = ms => tween({ v: 0 }, { v: 1 }, ms, Ease.linear);
+    function updateTweens(dt) {
+      for (let i = Tweens.length - 1; i >= 0; i--) {
+        const tw = Tweens[i];
+        tw.el += dt;
+        const t = Math.min(1, tw.el / tw.dur), e = tw.ease(t);
+        for (const k in tw.to) tw.obj[k] = tw.from[k] + (tw.to[k] - tw.from[k]) * e;
+        if (tw.onUpdate) tw.onUpdate(e, t);
+        if (t >= 1) { Tweens.splice(i, 1); tw.res(); }
+      }
+    }
+    // 中止全部动画（剧情重播时使用），被中止的 await 会抛出 'abort'
+    function abortAll() { Tweens.splice(0).forEach(t => t.rej('abort')); }
+    window.addEventListener('unhandledrejection', e => { if (e.reason === 'abort') e.preventDefault(); });
+
+    /* ---------------------------------------------------------------------
+     * 2. 音频系统：用振荡器合成温暖的五声音阶摇篮曲 + 各种音效
+     * ------------------------------------------------------------------- */
+    const AudioSys = {
+      ctx: null, master: null, musicGain: null, on: true, step: 0, next: 0,
+      init() {
+        if (this.ctx) return;
+        const C = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new C();
+        this.master = this.ctx.createGain(); this.master.gain.value = 0.6; this.master.connect(this.ctx.destination);
+        this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = 0.3; this.musicGain.connect(this.master);
+        this.startMusic();
+      },
+      tone(freq, start, dur, { type = 'sine', vol = 0.2, dest, slide } = {}) {
+        if (!this.ctx) return;
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = type; o.frequency.setValueAtTime(freq, start);
+        if (slide) o.frequency.exponentialRampToValueAtTime(slide, start + dur);
+        g.gain.setValueAtTime(0.0001, start);
+        g.gain.exponentialRampToValueAtTime(vol, start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+        o.connect(g); g.connect(dest || this.master);
+        o.start(start); o.stop(start + dur + 0.05);
+      },
+      startMusic() {
+        // C 大调五声音阶旋律（0 为休止）
+        const melody = [523, 659, 784, 880, 784, 659, 587, 523, 587, 659, 784, 659, 587, 523, 440, 0,
+          523, 659, 784, 880, 1047, 880, 784, 659, 587, 659, 523, 440, 392, 440, 523, 0];
+        const bass = [262, 262, 349, 349, 262, 262, 392, 262];
+        this.next = this.ctx.currentTime + 0.2;
+        setInterval(() => {
+          if (!this.ctx) return;
+          while (this.next < this.ctx.currentTime + 0.6) {         // 提前调度，保证节拍稳定
+            const i = this.step % melody.length;
+            if (melody[i]) this.tone(melody[i], this.next, 0.5, { type: 'triangle', vol: 0.12, dest: this.musicGain });
+            if (this.step % 4 === 0) this.tone(bass[Math.floor(i / 4) % bass.length], this.next, 1.7, { type: 'sine', vol: 0.12, dest: this.musicGain });
+            this.next += 0.45; this.step++;
+          }
+        }, 100);
+      },
+      toggle() { this.on = !this.on; if (this.musicGain) this.musicGain.gain.value = this.on ? 0.3 : 0; },
+      fadeMusic(target, sec = 3) { if (this.musicGain && this.on) this.musicGain.gain.linearRampToValueAtTime(target, this.ctx.currentTime + sec); },
+      // ---- 音效 ----
+      laugh() { const t = this.ctx.currentTime;[660, 880, 990, 1180].forEach((f, i) => this.tone(f, t + i * 0.09, 0.12, { type: 'square', vol: 0.035 })); },
+      pop() { this.tone(600, this.ctx.currentTime, 0.12, { type: 'sine', vol: 0.12, slide: 1200 }); },
+      click() { this.tone(1000, this.ctx.currentTime, 0.06, { type: 'square', vol: 0.05 }); },
+      lid() { this.tone(220, this.ctx.currentTime, 0.15, { type: 'triangle', vol: 0.1, slide: 320 }); },
+      door() { this.tone(140, this.ctx.currentTime, 0.4, { type: 'sawtooth', vol: 0.06, slide: 90 }); },
+      success() { const t = this.ctx.currentTime;[523, 659, 784, 1047].forEach((f, i) => this.tone(f, t + i * 0.12, 0.35, { type: 'triangle', vol: 0.18 })); },
+      fail() { const t = this.ctx.currentTime; this.tone(330, t, 0.3, { type: 'sawtooth', vol: 0.08 }); this.tone(247, t + 0.3, 0.5, { type: 'sawtooth', vol: 0.08 }); },
+      surprise() { this.tone(500, this.ctx.currentTime, 0.3, { type: 'sine', vol: 0.12, slide: 1000 }); },
+    };
+
+    /* ---------------------------------------------------------------------
+     * 3. 场景 / 渲染器 / 相机 / 灯光
+     * ------------------------------------------------------------------- */
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;   // 电影级色调映射
+    renderer.toneMappingExposure = 1.15;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffe3c2);
+    scene.fog = new THREE.Fog(0xffe3c2, 22, 45);
+
+    const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 6, 15);
+    const camTarget = new THREE.Vector3(0, 1, 0);         // 相机注视点（可被补间）
+    function camTo(pos, target, dur = 2000, ease = Ease.inOut) {
+      return Promise.all([tween(camera.position, pos, dur, ease), tween(camTarget, target, dur, ease)]);
+    }
+
+    // 灯光：暖色半球光 + 窗外阳光(投影) + 暖黄台灯 + 顶灯
+    scene.add(new THREE.HemisphereLight(0xfff3e0, 0xb57a52, 0.6));
+    const sun = new THREE.DirectionalLight(0xffd8a8, 1.1);
+    sun.position.set(-3, 9, 4); sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 30 });
+    sun.shadow.bias = -0.0006;
+    scene.add(sun);
+    const lampLight = new THREE.PointLight(0xffb45c, 1.3, 12, 2);
+    lampLight.position.set(-5.2, 2.2, -4.2); lampLight.castShadow = true; scene.add(lampLight);
+    const ceilLight = new THREE.PointLight(0xffe2b8, 0.6, 25, 2);
+    ceilLight.position.set(0, 4.6, 0); scene.add(ceilLight);
+
+    /* ---------------------------------------------------------------------
+     * 4. 卧室建模
+     * ------------------------------------------------------------------- */
+    const M = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.75, metalness: 0 }, o));
+    function box(w, h, d, mat, x = 0, y = 0, z = 0, cast = true) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; return m;
+    }
+    const room = new THREE.Group(); scene.add(room);
+
+    // 地板：木质 + 木板缝
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 12), M(0xc98d5e, { roughness: 0.6 }));
+    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; room.add(floor);
+    for (let x = -6.5; x <= 6.5; x += 1) room.add(box(0.03, 0.01, 12, M(0xa86f45), x, 0.005, 0, false));
+    for (let z = -5; z <= 5; z += 2.5) room.add(box(14, 0.01, 0.03, M(0xa86f45), 0, 0.005, z, false));
+
+    // 墙：后墙、左墙、右墙（右墙留出门洞）
+    const wallMat = M(0xfde9d2, { roughness: 0.95 });
+    room.add(box(14, 5, 0.2, wallMat, 0, 2.5, -6, false));
+    room.add(box(0.2, 5, 12, wallMat, -7, 2.5, 0, false));
+    room.add(box(0.2, 5, 7.3, wallMat, 7, 2.5, -2.35, false));
+    room.add(box(0.2, 5, 3.3, wallMat, 7, 2.5, 4.35, false));
+    room.add(box(0.2, 2.8, 1.4, wallMat, 7, 3.6, 2.0, false));
+    // 踢脚线 + 墙面彩色装饰条
+    const trim = M(0xffffff);
+    room.add(box(14, 0.18, 0.05, trim, 0, 0.09, -5.88, false));
+    room.add(box(0.05, 0.18, 12, trim, -6.88, 0.09, 0, false));
+    room.add(box(14, 0.5, 0.03, M(0xffc9a3), 0, 3.3, -5.89, false));
+    // 走廊背景（门打开后能看到的昏暗过道）
+    room.add(box(0.05, 4, 4, M(0x8a6650), 7.9, 2, 2, false));
+
+    // 窗户：框 + 发光玻璃 + 窗帘
+    const win = new THREE.Group(); win.position.set(0, 3, -5.88); room.add(win);
+    win.add(box(2.6, 2.0, 0.1, M(0xffffff)));
+    win.add(box(2.3, 1.7, 0.05, M(0xcfe9ff, { emissive: 0xbfe0ff, emissiveIntensity: 0.9 }), 0, 0, 0.02, false));
+    win.add(box(0.06, 1.7, 0.08, M(0xffffff), 0, 0, 0.04)); win.add(box(2.3, 0.06, 0.08, M(0xffffff), 0, 0, 0.04));
+    win.add(box(0.7, 2.6, 0.12, M(0xffb08a), -1.55, -0.2, 0.08)); win.add(box(0.7, 2.6, 0.12, M(0xffb08a), 1.55, -0.2, 0.08));
+
+    // 床
+    const bed = new THREE.Group(); bed.position.set(-5.6, 0, -2.5); room.add(bed);
+    bed.add(box(2.1, 0.5, 3.3, M(0xa8683f), 0, 0.25, 0));
+    bed.add(box(1.95, 0.35, 3.1, M(0xfffaf0), 0, 0.67, 0));
+    bed.add(box(1.4, 0.28, 0.7, M(0xffffff), 0, 0.95, -1.1));
+    bed.add(box(2.0, 0.14, 1.9, M(0xf2896f), 0, 0.9, 0.55));
+    bed.add(box(2.2, 1.3, 0.16, M(0xa8683f), 0, 0.9, -1.72));
+    // 床头柜 + 台灯
+    room.add(box(0.7, 0.6, 0.7, M(0xa8683f), -5.2, 0.3, -4.6));
+    room.add(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.7, 12), M(0xd9c6a5))).position.set(-5.2, 0.95, -4.6);
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.5, 20, 1, true), M(0xffd27f, { emissive: 0xffa040, emissiveIntensity: 0.8, side: THREE.DoubleSide }));
+    shade.position.set(-5.2, 1.5, -4.6); room.add(shade);
+
+    // 书架 + 彩色书本
+    const shelf = new THREE.Group(); shelf.position.set(4.3, 0, -5.65); room.add(shelf);
+    const woodMat = M(0xb8794d);
+    shelf.add(box(0.1, 2.5, 0.45, woodMat, -1.05, 1.25, 0)); shelf.add(box(0.1, 2.5, 0.45, woodMat, 1.05, 1.25, 0));
+    shelf.add(box(2.2, 0.08, 0.45, woodMat, 0, 2.5, 0)); shelf.add(box(2.2, 2.5, 0.05, M(0xd9a06f), 0, 1.25, -0.22, false));
+    [0.3, 1.05, 1.8].forEach((y, row) => {
+      shelf.add(box(2.0, 0.08, 0.45, woodMat, 0, y, 0));
+      const colors = [0xff7b7b, 0x6ec6ff, 0xffd166, 0x9ad36b, 0xc39bff, 0xff9ecb];
+      let x = -0.9;
+      for (let i = 0; i < 6 + row; i++) {
+        const w = 0.12 + Math.random() * 0.1, h = 0.45 + Math.random() * 0.2;
+        shelf.add(box(w, h, 0.32, M(colors[(i + row) % colors.length]), x + w / 2, y + 0.04 + h / 2, 0));
+        x += w + 0.03;
+      }
+    });
+
+    // 地毯 + 两个儿童玩耍区域（圆形软垫）
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(3.3, 48), M(0xf6b9a2, { roughness: 1 }));
+    rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.012, 0.6); rug.receiveShadow = true; room.add(rug);
+    const rug2 = new THREE.Mesh(new THREE.CircleGeometry(2.4, 48), M(0xfbd2bd, { roughness: 1 }));
+    rug2.rotation.x = -Math.PI / 2; rug2.position.set(0, 0.016, 0.6); rug2.receiveShadow = true; room.add(rug2);
+    [[-1.9, 0xaee0ff], [1.9, 0xffc6dc]].forEach(([x, c]) => {
+      const mat = new THREE.Mesh(new THREE.CircleGeometry(1.05, 40), M(c, { roughness: 1 }));
+      mat.rotation.x = -Math.PI / 2; mat.position.set(x, 0.02, 1.9); mat.receiveShadow = true; room.add(mat);
+    });
+
+    // 玩具：积木塔、泰迪熊、小汽车
+    const blocks = new THREE.Group(); blocks.position.set(-4.6, 0, 2.6); room.add(blocks);
+    [0xff6b6b, 0xffd166, 0x6ec6ff].forEach((c, i) => { const b = box(0.42, 0.42, 0.42, M(c), 0, 0.21 + i * 0.42, 0); b.rotation.y = i * 0.4; blocks.add(b); });
+    const bear = new THREE.Group(); bear.position.set(5.4, 0, -1.2); bear.rotation.y = -0.8; room.add(bear);
+    const bearMat = M(0xb67b4b);
+    const sp = (r, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 16), mat); m.position.set(x, y, z); m.castShadow = true; return m; };
+    bear.add(sp(0.36, bearMat, 0, 0.36, 0)); bear.add(sp(0.28, bearMat, 0, 0.9, 0));
+    bear.add(sp(0.1, bearMat, -0.22, 1.1, 0)); bear.add(sp(0.1, bearMat, 0.22, 1.1, 0));
+    bear.add(sp(0.12, M(0xe0b28a), 0, 0.82, 0.22)); bear.add(sp(0.04, M(0x222222), 0, 0.88, 0.33));
+    bear.add(sp(0.04, M(0x222222), -0.1, 0.96, 0.25)); bear.add(sp(0.04, M(0x222222), 0.1, 0.96, 0.25));
+    bear.add(sp(0.14, bearMat, -0.4, 0.35, 0.15)); bear.add(sp(0.14, bearMat, 0.4, 0.35, 0.15));
+    const car = new THREE.Group(); car.position.set(-3.6, 0, 4.2); car.rotation.y = 0.6; room.add(car);
+    car.add(box(0.75, 0.25, 0.4, M(0xff5a5a), 0, 0.25, 0)); car.add(box(0.4, 0.22, 0.36, M(0xffe6e6), -0.05, 0.47, 0));
+    [[-0.25, 0.22], [0.25, 0.22], [-0.25, -0.22], [0.25, -0.22]].forEach(([x, z]) => {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.08, 16), M(0x333333));
+      w.rotation.x = Math.PI / 2; w.position.set(x, 0.12, z); w.castShadow = true; car.add(w);
+    });
+
+    // 房门：绕铰链旋转的 Group
+    const door = new THREE.Group(); door.position.set(6.9, 0, 2.7); room.add(door);
+    door.add(box(0.1, 2.2, 1.4, M(0xf5c58a), 0, 1.1, -0.7));
+    door.add(box(0.04, 1.5, 0.9, M(0xe8ad6c), -0.06, 1.1, -0.7));
+    door.add(sp(0.06, M(0xffd700, { metalness: 0.6, roughness: 0.3 }), -0.1, 1.1, -1.2));
+    room.add(box(0.12, 0.1, 1.6, M(0xffffff), 6.9, 2.25, 2.0, false));
+    door.openDoor = () => { AudioSys.door(); return tween(door.rotation, { y: Math.PI / 2 }, 900, Ease.out); };
+    door.closeDoor = () => { AudioSys.door(); return tween(door.rotation, { y: 0 }, 900, Ease.inOut); };
+
+    // 盒子：五面体底座 + 可开合盖子（盒子关上后球完全被遮挡）
+    function createBox(color, x, z, label) {
+      const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+      const mat = M(color, { roughness: 0.55 }), dark = M(new THREE.Color(color).multiplyScalar(0.8).getHex(), { roughness: 0.55 });
+      const S = 1.3, H = 0.62, T = 0.08;
+      g.add(box(S, T, S, dark, 0, T / 2, 0));
+      g.add(box(S, H, T, mat, 0, H / 2, -S / 2 + T / 2)); g.add(box(S, H, T, mat, 0, H / 2, S / 2 - T / 2));
+      g.add(box(T, H, S, mat, -S / 2 + T / 2, H / 2, 0)); g.add(box(T, H, S, mat, S / 2 - T / 2, H / 2, 0));
+      // 盒子正面的小星星装饰
+      const star = new THREE.Mesh(new THREE.CircleGeometry(0.14, 5), M(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.3 }));
+      star.position.set(0, H / 2, S / 2 + 0.001); g.add(star);
+      const lid = new THREE.Group(); lid.position.set(0, H, -S / 2); g.add(lid);
+      lid.add(box(S + 0.1, T, S + 0.1, mat, 0, T / 2, S / 2));
+      lid.add(sp(0.09, M(0xffffff), 0, T + 0.07, S / 2));
+      g.lid = lid; g.label = label;
+      g.open = () => { AudioSys.lid(); return tween(lid.rotation, { x: -Math.PI * 0.72 }, 650, Ease.back); };
+      g.close = () => { AudioSys.lid(); return tween(lid.rotation, { x: 0 }, 550, Ease.inOut); };
+      g.inner = new THREE.Vector3(x, 0.3, z);   // 球放进去时的世界坐标
+      g.front = { x, z: z + 1.15 };            // 角色站立位
+      return g;
+    }
+    const pinkBox = createBox(0xff7fb0, -2.6, -2.2, '粉色盒子');
+    const blueBox = createBox(0x4d9dff, 2.6, -2.2, '蓝色盒子');
+
+    // 球：红球 + 装饰环，便于看到滚动
+    const ball = new THREE.Group(); scene.add(ball);
+    ball.add(sp(0.22, M(0xff4e4e, { roughness: 0.4 }), 0, 0, 0));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 10, 32), M(0xfff3b0, { roughness: 0.4 }));
+    ring.rotation.x = Math.PI / 2; ball.add(ring);
+    ball.holder = null;   // 当前拿球的角色（为空则球在场景中自由位置）
+
+    // 环境粒子：温暖的漂浮光尘
+    const pCount = 260, pPos = new Float32Array(pCount * 3);
+    for (let i = 0; i < pCount; i++) { pPos[i * 3] = (Math.random() - .5) * 13; pPos[i * 3 + 1] = Math.random() * 4.5; pPos[i * 3 + 2] = (Math.random() - .5) * 11; }
+    const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute('position', new THREE.Float32BufferAttribute(pPos, 3));
+    const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xfff1c4, size: 0.07, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
+    scene.add(particles);
+
+    /* ---------------------------------------------------------------------
+     * 5. 卡通角色类
+     * ------------------------------------------------------------------- */
+    function makeLabel(text, color) {
+      const c = document.createElement('canvas'); c.width = 256; c.height = 80;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = color; ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(48, 10, 160, 60, 30) : ctx.rect(48, 10, 160, 60); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 40px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, 128, 42);
+      const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+      s.scale.set(1.2, 0.375, 1); return s;
+    }
+
+    class Kid {
+      constructor({ name, isGirl, skin, cloth, pants, hair, label }) {
+        this.name = name; this.isGirl = isGirl; this.holding = false; this.blinkT = Math.random() * 3;
+        const g = this.g = new THREE.Group(); scene.add(g);
+        const skinM = M(skin, { roughness: 0.6 }), clothM = M(cloth, { roughness: 0.7 }), hairM = M(hair, { roughness: 0.8 });
+
+        // 身体：女孩是小裙子，男孩是圆滚滚的上衣
+        const body = new THREE.Mesh(isGirl ? new THREE.CylinderGeometry(0.3, 0.52, 0.72, 24) : new THREE.CylinderGeometry(0.33, 0.3, 0.68, 24), clothM);
+        body.position.y = 0.95; body.castShadow = true; g.add(body); this.body = body;
+        if (!isGirl) { const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.1, 24), M(pants)); belt.position.y = 0.63; g.add(belt); }
+        // 头
+        const head = new THREE.Group(); head.position.y = 1.62; g.add(head); this.head = head;
+        head.add(sp(0.44, skinM, 0, 0, 0));
+        // 头发：半球发型（男孩）/ 带双马尾（女孩）
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.47, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.5), hairM);
+        cap.position.y = 0.04; cap.castShadow = true; head.add(cap);
+        if (isGirl) {
+          [-1, 1].forEach(s => {
+            const tail = sp(0.17, hairM, s * 0.5, -0.1, -0.1); head.add(tail);
+            const bow = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.035, 8, 16), M(0xff5c9a)); bow.position.set(s * 0.46, 0.14, 0.05); head.add(bow);
+          });
+          const bang = sp(0.2, hairM, 0.15, 0.3, 0.3); bang.scale.set(1.2, 0.6, 0.8); head.add(bang);
+        } else {
+          const tuft = sp(0.12, hairM, 0.05, 0.46, 0.05); tuft.scale.set(1, 1.4, 1); head.add(tuft);
+        }
+        // 眼睛（白眼球 + 瞳孔 + 高光）
+        this.eyes = [];
+        [-0.16, 0.16].forEach(x => {
+          const eye = new THREE.Group(); eye.position.set(x, 0.05, 0.36); head.add(eye);
+          eye.add(sp(0.1, M(0xffffff, { roughness: 0.2 }), 0, 0, 0));
+          eye.add(sp(0.055, M(0x2b1a10, { roughness: 0.2 }), 0, 0, 0.065));
+          eye.add(sp(0.02, M(0xffffff, { emissive: 0xffffff }), 0.025, 0.03, 0.11));
+          this.eyes.push(eye);
+        });
+        // 眉毛
+        this.brows = [-0.16, 0.16].map(x => { const b = box(0.16, 0.035, 0.03, hairM, x, 0.2, 0.4); head.add(b); return b; });
+        // 腮红
+        [-0.27, 0.27].forEach(x => { const c = sp(0.07, M(0xff9a9a, { transparent: true, opacity: 0.6 }), x, -0.1, 0.33); c.scale.z = 0.4; head.add(c); });
+        // 嘴巴的几种形态，表情切换时显示其一
+        const mouthM = M(0xc0392b, { roughness: 0.5 });
+        const smile = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.025, 8, 20, Math.PI), mouthM); smile.rotation.z = Math.PI;
+        const oMouth = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.03, 8, 20), mouthM);
+        const smirk = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.025, 8, 20, Math.PI * 0.7), mouthM); smirk.rotation.z = Math.PI + 0.35; smirk.position.x = 0.06;
+        const flat = box(0.14, 0.03, 0.03, mouthM, 0, 0, 0, false);
+        this.mouths = { smile, o: oMouth, smirk, flat };
+        Object.values(this.mouths).forEach(m => { m.position.set(m.position.x, -0.17, 0.4); head.add(m); });
+        // 胳膊（以肩膀为旋转中心）
+        this.arms = [-1, 1].map(s => {
+          const a = new THREE.Group(); a.position.set(s * 0.38, 1.22, 0); g.add(a);
+          const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.5, 14), clothM); sleeve.position.y = -0.25; sleeve.castShadow = true; a.add(sleeve);
+          a.add(sp(0.1, skinM, 0, -0.52, 0));
+          a.rotation.z = s * 0.2; return a;
+        });
+        // 腿（以髋部为旋转中心）
+        this.legs = [-1, 1].map(s => {
+          const l = new THREE.Group(); l.position.set(s * 0.15, 0.62, 0); g.add(l);
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.5, 14), isGirl ? skinM : M(pants)); leg.position.y = -0.28; leg.castShadow = true; l.add(leg);
+          l.add(box(0.2, 0.12, 0.3, M(isGirl ? 0xff5c9a : 0x3b4a6b), 0, -0.56, 0.05));
+          return l;
+        });
+        // 拿球位置
+        this.carry = new THREE.Object3D(); this.carry.position.set(0, 1.05, 0.56); g.add(this.carry);
+        // 名字标签
+        const lab = makeLabel(name, label); lab.position.y = 2.45; g.add(lab);
+        this.setFace('happy');
+      }
+      // ---- 表情 ----
+      setFace(kind) {
+        const { smile, o, smirk, flat } = this.mouths;
+        Object.values(this.mouths).forEach(m => m.visible = false);
+        smile.scale.set(1, 1, 1);
+        this.eyes.forEach(e => e.scale.set(1, 1, 1));
+        this.brows.forEach((b, i) => { b.rotation.z = 0; b.position.y = 0.2; });
+        this.head.rotation.z = 0;
+        switch (kind) {
+          case 'happy': smile.visible = true; break;
+          case 'laugh': smile.visible = true; smile.scale.set(1.4, 1.5, 1); this.eyes.forEach(e => e.scale.y = 0.35); break;
+          case 'o': o.visible = true; this.eyes.forEach(e => e.scale.set(1.3, 1.3, 1.3)); this.brows.forEach(b => b.position.y = 0.26); break;
+          case 'confused': flat.visible = true; this.brows[0].rotation.z = 0.35; this.brows[1].rotation.z = -0.1; this.brows[1].position.y = 0.24; this.head.rotation.z = 0.18; break;
+          case 'smirk': smirk.visible = true; this.brows[0].rotation.z = -0.3; this.brows[1].rotation.z = 0.2; this.eyes.forEach(e => e.scale.y = 0.7); break;
+          case 'aha': smile.visible = true; smile.scale.set(1.3, 1.3, 1); this.eyes.forEach(e => e.scale.set(1.25, 1.25, 1.25)); this.brows.forEach(b => b.position.y = 0.27); break;
+        }
+      }
+      // ---- 转身面向某个点（取最短旋转方向）----
+      faceTo(x, z, dur = 350) {
+        const g = this.g, target = Math.atan2(x - g.position.x, z - g.position.z);
+        let d = target - g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+        return tween(g.rotation, { y: g.rotation.y + d }, dur);
+      }
+      // ---- 走路：位移 + 腿摆动 + 身体起伏 ----
+      async walkTo(x, z, speed = 1.7) {
+        const g = this.g, sx = g.position.x, sz = g.position.z, dist = Math.hypot(x - sx, z - sz);
+        if (dist < 0.02) return;
+        this.faceTo(x, z).catch(() => { });
+        await tween({ t: 0 }, { t: 1 }, dist / speed * 1000, Ease.linear, e => {
+          g.position.x = sx + (x - sx) * e; g.position.z = sz + (z - sz) * e;
+          const ph = e * dist * 4.5;
+          this.legs[0].rotation.x = Math.sin(ph) * 0.65; this.legs[1].rotation.x = -Math.sin(ph) * 0.65;
+          if (!this.holding) { this.arms[0].rotation.x = -Math.sin(ph) * 0.5; this.arms[1].rotation.x = Math.sin(ph) * 0.5; }
+          g.position.y = Math.abs(Math.sin(ph)) * 0.06;
+        });
+        this.legs.forEach(l => l.rotation.x = 0); g.position.y = 0;
+        if (!this.holding) this.arms.forEach(a => a.rotation.x = 0);
+      }
+      // ---- 拿球姿势（双手向前）/ 放下 ----
+      hold(on, instant = false) {
+        this.holding = on;
+        this.arms.forEach((a, i) => {
+          const s = i === 0 ? -1 : 1, to = on ? { x: -1.25, z: s * -0.35 } : { x: 0, z: s * 0.2 };
+          if (instant) { a.rotation.x = to.x; a.rotation.z = to.z; } else tween(a.rotation, to, 300).catch(() => { });
+        });
+      }
+      // ---- 弯腰（放球/拿球时）----
+      async bend(down) { await tween(this.body.rotation, { x: down ? 0.35 : 0 }, 350); }
+      // ---- 每帧：呼吸、眨眼、轻微摇摆 ----
+      idle(t, dt) {
+        this.body.scale.y = 1 + Math.sin(t * 2.2 + (this.isGirl ? 1 : 0)) * 0.025;
+        this.head.position.y = 1.62 + Math.sin(t * 2.2 + (this.isGirl ? 1 : 0)) * 0.02;
+        this.head.rotation.y = Math.sin(t * 0.8) * 0.08;
+        this.blinkT -= dt;
+        if (this.blinkT < 0) { this.eyes.forEach(e => e.scale.y *= 0.1); setTimeout(() => this.eyes.forEach(e => { if (e.scale.y < 0.2) e.scale.y = Math.max(e.scale.y * 10, 0.35); }), 120); this.blinkT = 2 + Math.random() * 3; }
+      }
+      reset(x, z, rotY) { this.g.position.set(x, 0, z); this.g.rotation.set(0, rotY, 0); this.g.visible = true; this.body.rotation.x = 0; this.legs.forEach(l => l.rotation.x = 0); this.hold(false, true); this.setFace('happy'); }
+    }
+
+    const boy = new Kid({ name: '圆圆', isGirl: false, skin: 0xffd3b0, cloth: 0x4da3ff, pants: 0x3b4a6b, hair: 0x3a2314, label: '#3b7dff' });
+    const girl = new Kid({ name: '珍珍', isGirl: true, skin: 0xffd9bc, cloth: 0xff7fb0, pants: 0xff7fb0, hair: 0x5a2d12, label: '#ff5c9a' });
+
+    // 关键位置
+    const P = { boyPlay: { x: -1.9, z: 1.9 }, girlPlay: { x: 1.9, z: 1.9 }, doorIn: { x: 5.3, z: 2 }, doorOut: { x: 7.7, z: 2 } };
+
+    /* ---------------------------------------------------------------------
+     * 6. UI 辅助
+     * ------------------------------------------------------------------- */
+    const $ = id => document.getElementById(id);
+    const capEl = $('caption'), noteEl = $('note'), fxEl = $('fx');
+    const WHO_COLOR = { '圆圆': '#3b7dff', '珍珍': '#ff5c9a', '旁白': '#e08a3c' };
+    // 显示对话字幕，并等待指定时间
+    async function say(who, text, ms = 2000) {
+      capEl.querySelector('.who').textContent = who; capEl.querySelector('.who').style.background = WHO_COLOR[who] || '#888';
+      capEl.querySelector('.txt').textContent = text; capEl.classList.add('show');
+      await wait(ms); capEl.classList.remove('show');
+    }
+    async function showNote(text, ms = 2500) { noteEl.textContent = text; noteEl.classList.add('show'); await wait(ms); noteEl.classList.remove('show'); }
+    function hideTexts() { capEl.classList.remove('show'); noteEl.classList.remove('show'); }
+    // 屏幕上漂浮的欢笑表情
+    function laughFx() {
+      AudioSys.laugh();
+      ['😆', '😄', '🤭', '✨', '🎉'].forEach((e, i) => {
+        const s = document.createElement('span'); s.className = 'emo'; s.textContent = e;
+        s.style.left = (35 + Math.random() * 30) + 'vw'; s.style.top = (35 + Math.random() * 25) + 'vh'; s.style.animationDelay = i * 0.1 + 's';
+        fxEl.appendChild(s); setTimeout(() => s.remove(), 1800);
+      });
+    }
+    // 彩带庆祝
+    function confetti() {
+      const colors = ['#ff5c9a', '#3b7dff', '#ffd166', '#9ad36b', '#ff7b54', '#c39bff'];
+      for (let i = 0; i < 70; i++) {
+        const s = document.createElement('span'); s.className = 'confetti';
+        s.style.left = Math.random() * 100 + 'vw'; s.style.background = colors[i % colors.length];
+        s.style.animationDuration = (1.8 + Math.random() * 1.6) + 's'; s.style.animationDelay = Math.random() * 0.6 + 's';
+        fxEl.appendChild(s); setTimeout(() => s.remove(), 4000);
+      }
+    }
+    // 选择界面：返回 Promise<'pink'|'blue'>
+    const choiceEl = $('choice'), panelEl = $('panel'), teacherText = $('teacherText');
+    const btnBlue = $('btnBlue'), btnPink = $('btnPink');
+    function showChoice() {
+      teacherText.textContent = '你认为珍珍会在哪个盒子里找球呢？';
+      btnBlue.disabled = btnPink.disabled = false; choiceEl.classList.add('show');
+      return new Promise(res => {
+        const pick = v => () => { AudioSys.click(); btnBlue.disabled = btnPink.disabled = true; btnBlue.onclick = btnPink.onclick = null; res(v); };
+        btnBlue.onclick = pick('blue'); btnPink.onclick = pick('pink');
+      });
+    }
+    function hideChoice() { choiceEl.classList.remove('show'); }
+
+    /* ---------------------------------------------------------------------
+     * 7. 剧情脚本
+     * ------------------------------------------------------------------- */
+    // 传球：抛物线 + 旋转 + 欢笑
+    async function passBall(from, to) {
+      from.setFace('laugh'); to.setFace('happy'); laughFx();
+      const s = new THREE.Vector3(), e = new THREE.Vector3();
+      from.carry.getWorldPosition(s); to.carry.getWorldPosition(e);
+      ball.holder = null; from.hold(false);
+      await tween({ t: 0 }, { t: 1 }, 750, Ease.linear, k => { ball.position.lerpVectors(s, e, k); ball.position.y += Math.sin(k * Math.PI) * 1.0; ball.rotation.x += 0.25; });
+      AudioSys.pop(); ball.holder = to; to.hold(true); from.setFace('happy');
+      await wait(400);
+    }
+    // 把手中的球放进盒子
+    async function putBall(kid, bx) {
+      await kid.bend(true);
+      const s = new THREE.Vector3(); kid.carry.getWorldPosition(s); ball.holder = null; kid.hold(false);
+      await tween({ t: 0 }, { t: 1 }, 700, Ease.inOut, k => { ball.position.lerpVectors(s, bx.inner, k); ball.position.y += Math.sin(k * Math.PI) * 0.5; });
+      AudioSys.pop(); await kid.bend(false);
+    }
+    // 从盒子里拿出球
+    async function takeBall(kid, bx) {
+      await kid.bend(true);
+      const e = new THREE.Vector3(); kid.carry.getWorldPosition(e); const s = ball.position.clone();
+      kid.hold(true);
+      await tween({ t: 0 }, { t: 1 }, 700, Ease.inOut, k => { ball.position.lerpVectors(s, e, k); ball.position.y += Math.sin(k * Math.PI) * 0.5; });
+      ball.holder = kid; AudioSys.pop(); await kid.bend(false);
+    }
+    // 复位所有舞台元素
+    function resetScene() {
+      hideTexts(); hideChoice(); $('end').classList.remove('show');
+      boy.reset(P.boyPlay.x, P.boyPlay.z, Math.PI / 2);
+      girl.reset(P.girlPlay.x, P.girlPlay.z, -Math.PI / 2);
+      ball.holder = boy; boy.hold(true, true);
+      pinkBox.lid.rotation.x = 0; blueBox.lid.rotation.x = 0; door.rotation.y = 0;
+      camera.position.set(0, 6.5, 15); camTarget.set(0, 1, 0);
+      if (AudioSys.musicGain && AudioSys.on) AudioSys.musicGain.gain.setValueAtTime(0.3, AudioSys.ctx.currentTime);
+    }
+
+    let runToken = 0;
+    async function startStory() {
+      const token = ++runToken;
+      abortAll(); resetScene();
+      try { await story(token); } catch (e) { if (e !== 'abort') console.error(e); }
+    }
+
+    async function story() {
+      /* ================= 第一幕：儿童卧室玩耍 ================= */
+      camTo({ x: 0, y: 3.6, z: 8.5 }, { x: 0, y: 1.1, z: 0.6 }, 3500).catch(() => { });
+      await showNote('第一幕 · 卧室里的游戏', 2200);
+      await say('旁白', '圆圆和珍珍正在温暖的卧室里一起玩球。', 2200);
+      for (let i = 0; i < 5; i++) await passBall(i % 2 ? girl : boy, i % 2 ? boy : girl);   // 结束时球在珍珍手里
+
+      await say('珍珍', '我去上个厕所。', 2000);
+      // 珍珍把球放进粉色盒子
+      camTo({ x: -0.2, y: 4.3, z: 1.4 }, { x: -2.6, y: 0.5, z: -2.2 }, 1800).catch(() => { });
+      await girl.walkTo(pinkBox.front.x, pinkBox.front.z);
+      await girl.faceTo(pinkBox.position.x, pinkBox.position.z);
+      await pinkBox.open();
+      await putBall(girl, pinkBox);
+      await pinkBox.close();
+      await showNote('🎀 球放进了粉色盒子，盖子关上了 —— 现在谁都看不见球。', 3000);
+
+      // 珍珍离开房间
+      camTo({ x: 2.6, y: 2.6, z: 5.2 }, { x: 6.2, y: 1.2, z: 2 }, 1800).catch(() => { });
+      await girl.walkTo(P.doorIn.x, P.doorIn.z);
+      await girl.faceTo(10, 2);
+      await door.openDoor();
+      await girl.walkTo(P.doorOut.x, P.doorOut.z, 1.5);
+      await door.closeDoor();
+      girl.g.visible = false;
+      await say('旁白', '珍珍关上门走了。接下来房间里发生的事，她都看不到。', 3200);
+
+      /* ================= 第二幕：球的位置变化 ================= */
+      await showNote('第二幕 · 球去哪儿了？', 2000);
+      boy.setFace('smirk');
+      camTo({ x: -0.2, y: 4.3, z: 1.4 }, { x: -2.6, y: 0.5, z: -2.2 }, 1600).catch(() => { });
+      await say('圆圆', '嘿嘿～我来和珍珍开个小玩笑！', 2200);
+      await boy.walkTo(pinkBox.front.x, pinkBox.front.z);
+      await boy.faceTo(pinkBox.position.x, pinkBox.position.z);
+      await pinkBox.open();
+      await takeBall(boy, pinkBox);
+      await pinkBox.close();
+      // 镜头跟随圆圆走向蓝色盒子
+      camTo({ x: 0.4, y: 4.3, z: 1.6 }, { x: 2.6, y: 0.5, z: -2.2 }, 2200).catch(() => { });
+      await boy.walkTo(blueBox.front.x, blueBox.front.z);
+      await boy.faceTo(blueBox.position.x, blueBox.position.z);
+      await blueBox.open();
+      await putBall(boy, blueBox);
+      await blueBox.close();
+      await showNote('球：粉色盒子 ➜ 蓝色盒子（珍珍没有看到！）', 3400);
+      boy.setFace('happy');
+      camTo({ x: 0, y: 3.6, z: 8.5 }, { x: 0, y: 1.1, z: 0.6 }, 2000).catch(() => { });
+      await boy.walkTo(P.boyPlay.x, P.boyPlay.z);
+      await boy.faceTo(P.girlPlay.x, P.girlPlay.z);
+
+      /* ================= 第三幕：珍珍回来 + 认知选择 ================= */
+      await say('旁白', '过了一会儿……', 1500);
+      camTo({ x: 2.6, y: 2.6, z: 5.2 }, { x: 6.2, y: 1.2, z: 2 }, 1500).catch(() => { });
+      await door.openDoor();
+      girl.g.visible = true; girl.g.position.set(P.doorOut.x, 0, P.doorOut.z); girl.g.rotation.y = -Math.PI / 2;
+      await girl.walkTo(P.doorIn.x, P.doorIn.z, 1.5);
+      door.closeDoor().catch(() => { });
+      camTo({ x: 0, y: 3.6, z: 8.5 }, { x: 0, y: 1.1, z: 0.6 }, 2000).catch(() => { });
+      await girl.walkTo(P.girlPlay.x, P.girlPlay.z);
+      await girl.faceTo(P.boyPlay.x, P.boyPlay.z);
+      await say('珍珍', '我们继续玩球吧！', 2200);
+      await showNote('第三幕 · 请你来判断', 1500);
+      camTo({ x: 0, y: 2.4, z: 7.5 }, { x: 0, y: 1.2, z: 1.5 }, 1500).catch(() => { });
+
+      const answer = await showChoice();        // 剧情暂停，等待用户选择
+      if (answer === 'blue') {
+        console.log('错误');
+        AudioSys.fail();
+        panelEl.classList.add('shake'); setTimeout(() => panelEl.classList.remove('shake'), 700);
+        teacherText.textContent = '不对哦，再仔细看看，小女孩把球放到粉色盒子里就出去上厕所了。';
+        await wait(4500);
+        hideChoice();
+        await say('旁白', '让我们再看一遍，这次请注意：珍珍自己看到了什么？', 3000);
+        startStory();                            // 重新播放整个实验
+        return;
+      }
+      console.log('正确');
+      AudioSys.success(); confetti();
+      teacherText.textContent = '选对了，你真棒！';
+      await wait(2800);
+      hideChoice();
+
+      /* ================= 结尾：珍珍找球 ================= */
+      camTo({ x: -0.2, y: 4.3, z: 1.4 }, { x: -2.6, y: 0.5, z: -2.2 }, 1800).catch(() => { });
+      await girl.walkTo(pinkBox.front.x, pinkBox.front.z);
+      await girl.faceTo(pinkBox.position.x, pinkBox.position.z);
+      await pinkBox.open();
+      await girl.bend(true); await wait(500); await girl.bend(false);
+      girl.setFace('confused'); AudioSys.surprise();
+      await say('珍珍', '咦？我的球呢？', 2000);
+      camTo({ x: -1, y: 2.6, z: 4.5 }, { x: -0.5, y: 1.3, z: 0 }, 1500).catch(() => { });
+      await girl.faceTo(boy.g.position.x, boy.g.position.z);
+      boy.setFace('smirk');
+      await say('圆圆', '嘿嘿嘿～', 1600);
+      // 圆圆打开蓝色盒子拿出球
+      camTo({ x: 0.4, y: 4.3, z: 1.6 }, { x: 2.6, y: 0.5, z: -2.2 }, 1800).catch(() => { });
+      await boy.walkTo(blueBox.front.x, blueBox.front.z);
+      await boy.faceTo(blueBox.position.x, blueBox.position.z);
+      await blueBox.open();
+      await takeBall(boy, blueBox);
+      await boy.faceTo(girl.g.position.x, girl.g.position.z);
+      girl.setFace('o'); AudioSys.surprise();
+      camTo({ x: 0, y: 2.8, z: 4.5 }, { x: 0, y: 1.2, z: -1.5 }, 1500).catch(() => { });
+      await say('珍珍', '啊！原来你把球藏到蓝色盒子里啦！', 2600);
+      girl.setFace('aha'); boy.setFace('laugh'); laughFx();
+      await say('珍珍', '哈哈，好调皮！快来继续玩吧！', 2000);
+      // 两人回到玩耍区继续玩球
+      camTo({ x: 0, y: 3.6, z: 8.5 }, { x: 0, y: 1.1, z: 0.6 }, 2500).catch(() => { });
+      await Promise.all([girl.walkTo(P.girlPlay.x, P.girlPlay.z), boy.walkTo(P.boyPlay.x, P.boyPlay.z)]);
+      await Promise.all([girl.faceTo(P.boyPlay.x, P.boyPlay.z), boy.faceTo(P.girlPlay.x, P.girlPlay.z)]);
+      for (let i = 0; i < 4; i++) await passBall(i % 2 ? girl : boy, i % 2 ? boy : girl);
+      // 镜头拉远，音乐渐弱，显示实验完成
+      AudioSys.fadeMusic(0.08, 5);
+      camTo({ x: 0, y: 7, z: 16 }, { x: 0, y: 1, z: 0 }, 5000, Ease.inOut).catch(() => { });
+      passLoop();                                 // 背景里两人继续传球
+      await wait(2500);
+      $('end').classList.add('show');
+    }
+    // 结尾背景循环传球（直到重播）
+    async function passLoop() {
+      try { let i = 0; while (true) { await passBall(i % 2 ? girl : boy, i % 2 ? boy : girl); i++; await wait(300); } } catch (e) { }
+    }
+
+    /* ---------------------------------------------------------------------
+     * 8. 主循环与事件
+     * ------------------------------------------------------------------- */
+    let last = performance.now(), time = 0;
+    function loop(now) {
+      requestAnimationFrame(loop);
+      const dt = Math.min(50, now - last); last = now; time += dt / 1000;
+      updateTweens(dt);
+      boy.idle(time, dt / 1000); girl.idle(time, dt / 1000);
+      if (ball.holder) ball.holder.carry.getWorldPosition(ball.position);   // 球跟随拿球角色
+      // 粒子缓慢上升漂浮
+      const arr = particles.geometry.attributes.position.array;
+      for (let i = 0; i < pCount; i++) { arr[i * 3 + 1] += 0.0025; arr[i * 3] += Math.sin(time + i) * 0.0008; if (arr[i * 3 + 1] > 4.6) arr[i * 3 + 1] = 0; }
+      particles.geometry.attributes.position.needsUpdate = true;
+      lampLight.intensity = 1.3 + Math.sin(time * 3) * 0.05;               // 台灯轻微呼吸
+      camera.lookAt(camTarget);
+      renderer.render(scene, camera);
+    }
+    resetScene();
+    loop(last);
+
+    window.addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+    $('startBtn').onclick = () => { AudioSys.init(); AudioSys.click(); $('title').classList.add('hidden'); startStory(); };
+    $('replayBtn').onclick = () => { if (!AudioSys.ctx) AudioSys.init(); $('title').classList.add('hidden'); startStory(); };
+    $('againBtn').onclick = () => { AudioSys.click(); startStory(); };
+    $('musicBtn').onclick = () => { if (!AudioSys.ctx) AudioSys.init(); AudioSys.toggle(); $('musicBtn').textContent = AudioSys.on ? '🔊 音乐：开' : '🔇 音乐：关'; };
+  </script>
+</body>
+
+</html>

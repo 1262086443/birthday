@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pixel Wizard</title>
+<style>
+  html,body{margin:0;height:100%;background:#08071a;overflow:hidden}
+  #screen{position:fixed;left:0;top:0;width:100vw;height:100vh;display:block;
+    image-rendering:crisp-edges;image-rendering:pixelated}
+</style>
+</head>
+<body>
+<canvas id="screen"></canvas>
+<script>
+(() => {
+'use strict';
+
+/* ============================== CONSTANTS ============================== */
+const W = 128, H = 96, PAD = 2, TAU = Math.PI * 2;
+const BX = 30, BY = 80, FLOOR = 81;           // wizard anchor (center x, feet y)
+
+// Fixed palette: every pixel drawn comes from here.
+const PAL = [
+  '#08071a', // 0  ink / outline
+  '#100f30', // 1  sky 0
+  '#1a1a4a', // 2  sky 1 / ridge
+  '#262566', // 3  sky 2
+  '#383282', // 4  sky 3 (horizon)
+  '#c8d0ff', // 5  moon / star
+  '#8a90c8', // 6  moon shade / dim star
+  '#ffffff', // 7  white
+  '#241f38', // 8  stone dark
+  '#3c3454', // 9  stone mid
+  '#5e5478', // 10 stone light
+  '#3b1650', // 11 robe deep (folds)
+  '#6b2a8c', // 12 robe dark
+  '#a048c0', // 13 robe light
+  '#e8b450', // 14 gold trim
+  '#f0c09a', // 15 skin
+  '#b87a62', // 16 skin shade
+  '#e4e4f0', // 17 beard
+  '#9898bc', // 18 beard shade
+  '#4a2c1c', // 19 wood dark
+  '#8c5a30', // 20 wood light
+  '#8ff8ff', // 21 magic cyan
+  '#34b4f4', // 22 magic blue
+  '#b45cff', // 23 magic violet
+  '#ff78e0', // 24 magic pink
+  '#1c5a96'  // 25 magic deep
+];
+
+/* ============================== CANVASES ============================== */
+const disp = document.getElementById('screen');
+const dctx = disp.getContext('2d', { alpha: false });
+
+const off = document.createElement('canvas');
+off.width = W + PAD * 2; off.height = H + PAD * 2;   // padded so shake never reveals edges
+const g = off.getContext('2d');
+g.imageSmoothingEnabled = false;
+
+const bgCan = document.createElement('canvas');
+bgCan.width = W + PAD * 2; bgCan.height = H + PAD * 2;
+const bgx = bgCan.getContext('2d');
+
+let ctx = g, curC = -1;
+function R(x, y, w, h, c) { if (c !== curC) { ctx.fillStyle = PAL[c]; curC = c; } ctx.fillRect(x, y, w, h); }
+function P(x, y, c)       { if (c !== curC) { ctx.fillStyle = PAL[c]; curC = c; } ctx.fillRect(x, y, 1, 1); }
+
+let scale = 1, ox = 0, oy = 0;
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const cw = Math.max(1, Math.floor(innerWidth * dpr));
+  const ch = Math.max(1, Math.floor(innerHeight * dpr));
+  disp.width = cw; disp.height = ch;
+  scale = Math.max(1, Math.floor(Math.min(cw / W, ch / H)));
+  ox = ((cw - W * scale) / 2) | 0;
+  oy = ((ch - H * scale) / 2) | 0;
+  dctx.imageSmoothingEnabled = false;
+  dctx.fillStyle = PAL[0];
+  dctx.fillRect(0, 0, cw, ch);
+}
+addEventListener('resize', resize);
+resize();
+
+/* ============================== BACKGROUND (prerendered once) ============================== */
+let seed = 7;
+function srnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+
+function skyC(x, y) {
+  const B0 = 18, B1 = 38, B2 = 58;
+  let c = y < B0 ? 1 : y < B1 ? 2 : y < B2 ? 3 : 4;
+  const b = y < B0 ? B0 : y < B1 ? B1 : y < B2 ? B2 : 9999;
+  const d = b - y;
+  if (d === 1 && ((x + y) & 1)) c++;                               // 50% dither
+  else if (d === 2 && (x & 3) === ((y & 1) << 1)) c++;             // 25% dither
+  return c;
+}
+function ridge(x) {
+  return 71 + Math.round(2.5 * Math.sin(x * 0.07 + 0.5) + 1.5 * Math.sin(x * 0.19 + 2.0));
+}
+function floorC(x, y) {
+  if (y === 81) return (x >= BX - 8 && x <= BX + 10) ? 9 : 10;     // floor line + contact shadow
+  if (y === 82) return (x >= BX - 6 && x <= BX + 8) ? 8 : 9;
+  const ry = y - 83, row = ry >> 2, ly = ry & 3;
+  if (ly === 3) return 8;                                          // mortar
+  const jx = (((x + (row & 1) * 6) % 12) + 12) % 12;
+  if (jx === 0) return 8;
+  if (ly === 0 && jx === 1) return 10;                             // brick highlight
+  if (row >= 2 && ((x + y) & 1)) return 8;                         // fade to dark
+  return 9;
+}
+function buildBG() {
+  ctx = bgx; curC = -1;
+  bgx.setTransform(1, 0, 0, 1, PAD, PAD);
+  const MX = 101, MY = 19, MR = 7;
+  for (let y = -PAD; y < H + PAD; y++) {
+    for (let x = -PAD; x < W + PAD; x++) {
+      let c;
+      if (y >= FLOOR) c = floorC(x, y);
+      else {
+        const rh = ridge(x);
+        if (y >= rh) c = (y === rh && x > 64 && (x & 1)) ? 3 : 2;
+        else {
+          c = skyC(x, y);
+          const dx = x - MX, dy = y - MY, d2 = dx * dx + dy * dy;
+          if (d2 <= MR * MR + 2) {
+            c = 5;
+            const sx = x - (MX + 2), sy = y - (MY - 2);
+            if (sx * sx + sy * sy > MR * MR) c = 6;                // crescent shading
+          } else if (d2 <= (MR + 2) * (MR + 2)) { if (((x + y) & 1) === 0) c = 3; }
+          else if (d2 <= (MR + 4) * (MR + 4)) { if ((x & 1) === 0 && (y & 1) === 0) c = 3; }
+        }
+      }
+      P(x, y, c);
+    }
+  }
+  // craters
+  P(MX - 2, MY + 1, 6); P(MX - 1, MY + 1, 6); P(MX - 1, MY + 2, 6);
+  P(MX + 2, MY - 2, 6); P(MX + 1, MY + 3, 6); P(MX - 3, MY - 2, 6);
+  ctx = g; curC = -1;
+}
+buildBG();
+
+// Stars
+const SN = 28;
+const starX = new Int16Array(SN), starY = new Int16Array(SN), starP = new Uint8Array(SN);
+for (let i = 0; i < SN;) {
+  const x = 2 + ((srnd() * 124) | 0), y = 2 + ((srnd() * 50) | 0);
+  const dx = x - 101, dy = y - 19;
+  if (dx * dx + dy * dy < 160) continue;
+  starX[i] = x; starY[i] = y; starP[i] = (srnd() * 32) | 0; i++;
+}
+
+/* ============================== STATE MACHINE & POSE ============================== */
+const S_IDLE = 0, S_CHARGE = 1, S_CAST = 2, S_RECOVER = 3;
+const DUR   = [150, 96, 36, 54];     // ticks @60Hz (all multiples of 6 -> seamless 10fps sampling)
+const BLEND = [1, 50, 10, 48];
+const NP = 6;                        // staff, arm, tilt, sway, hatBend, reach
+const KEY = new Float32Array([
+   0.18, 0,    0,  0,    2, 0,       // IDLE
+  -0.12, 1,   -1,  0.6,  1, 0,       // CHARGE: staff overhead, look up
+   0.85, 0.55, 1, -1.6,  4, 2,       // CAST: lunge, robe & hat billow back
+   0.18, 0,    0,  0,    2, 0        // RECOVER -> idle pose
+]);
+const from = new Float32Array(NP), cur = new Float32Array(NP);
+from.set(KEY.subarray(0, NP)); cur.set(from);   // init-time only
+
+let state = S_IDLE, st = 0, tick = 0;
+
+// Quantized pose (sampled at 10fps)
+let qBob = 0, qSway = 0, qBeard = 0, qTilt = 0, qBend = 2, qStaff = 0, qArm = 0, qReach = 0;
+let wTop = BY - 15, handX = 0, handY = 0, gemX = 0, gemY = 0, stbX = 0, stbY = 0;
+
+// Visual state
+let rimLevel = 1, gemC = 21, haloR = 3, shX = 0, shY = 0;
+const RIMC  = new Int8Array([-1, 23, 22, 21, 7]);
+const FLICK = new Uint8Array([21, 7, 23, 22]);
+const BURST = new Uint8Array([2, 5, 8, 7, 5, 3, 2, 1]);
+
+function smooth(t) { return t * t * (3 - 2 * t); }
+function outBack(t) { const c1 = 1.70158, c3 = c1 + 1, u = t - 1; return 1 + c3 * u * u * u + c1 * u * u; }
+
+function quantize() {
+  const ph = ((tick % 336) / 336) * TAU * 3;          // period 112 ticks, loops every 336
+  qBob   = state === S_IDLE ? (((st / 30) | 0) & 1) : 0;
+  qSway  = cur[3] + Math.sin(ph) * 0.8;
+  qBeard = Math.round(Math.sin(ph - 1.2) * 1.1 + cur[3] * 0.7);
+  if (qBeard > 2) qBeard = 2; else if (qBeard < -2) qBeard = -2;
+  qTilt  = Math.round(cur[2]);
+  qBend  = Math.round(cur[4] + Math.sin(ph - 0.6) * 0.6);
+  let a = cur[0];
+  if (state === S_CHARGE) a += Math.sin(st * 1.7) * 0.05 * (st / DUR[S_CHARGE]);
+  qStaff = Math.round(a * 20) / 20;
+  qArm = cur[1]; qReach = cur[5];
+
+  // Rig
+  wTop  = BY - 15 + qBob;
+  handX = Math.round(BX + 8 + qReach);
+  handY = Math.round(wTop + 7 - qArm * 12);
+  const s = Math.sin(qStaff), c = Math.cos(qStaff);
+  gemX = Math.round(handX + s * 13); gemY = Math.round(handY - c * 13);
+  stbX = Math.round(handX - s * 19); stbY = Math.round(handY + c * 19);
+}
+
+function enter(s) {
+  state = s; st = 0;
+  from.set(cur);
+}
+
+/* ============================== PARTICLES (pooled) ============================== */
+const PN = 384;
+const pX = new Float32Array(PN), pY = new Float32Array(PN);
+const pVX = new Float32Array(PN), pVY = new Float32Array(PN), pW = new Float32Array(PN);
+const pLife = new Int16Array(PN), pMax = new Int16Array(PN);
+const pKind = new Uint8Array(PN), pRamp = new Uint8Array(PN);
+// kind 0: ballistic spark, 1: orbiting spark, 2: drifting mote/trail
+const RAMPS = new Uint8Array([7, 21, 22, 25,   7, 24, 23, 11,   7, 21, 23, 12]);
+let pCursor = 0;
+
+function spawn() {
+  for (let n = 0; n < PN; n++) {
+    const i = pCursor; pCursor = (pCursor + 1) % PN;
+    if (pLife[i] <= 0) return i;
+  }
+  const i = pCursor; pCursor = (pCursor + 1) % PN;   // pool full: recycle oldest slot
+  return i;
+}
+function drift(x, y, vx, vy, d, life, ramp) {
+  const i = spawn();
+  pX[i] = x; pY[i] = y; pVX[i] = vx; pVY[i] = vy; pW[i] = d;
+  pKind[i] = 2; pRamp[i] = ramp; pLife[i] = pMax[i] = life;
+}
+function burst(x, y, n, smin, smax, lmin, lmax) {
+  for (let k = 0; k < n; k++) {
+    const i = spawn();
+    const a = Math.random() * TAU, sp = smin + Math.random() * (smax - smin);
+    pX[i] = x; pY[i] = y;
+    pVX[i] = Math.cos(a) * sp; pVY[i] = Math.sin(a) * sp - 0.4;
+    pW[i] = 0.93; pKind[i] = 0;
+    pRamp[i] = (Math.random() * 3) | 0;
+    pLife[i] = pMax[i] = lmin + ((Math.random() * (lmax - lmin)) | 0);
+  }
+}
+function orbit() {
+  const i = spawn();
+  const a = Math.random() * TAU, r = 10 + Math.random() * 8;
+  pKind[i] = 1; pVX[i] = a; pVY[i] = r; pW[i] = 0.10 + Math.random() * 0.06;
+  pX[i] = gemX + Math.cos(a) * r; pY[i] = gemY + Math.sin(a) * r * 0.7;
+  pRamp[i] = Math.random() < 0.7 ? 0 : 2;
+  pLife[i] = pMax[i] = 36 + ((Math.random() * 24) | 0);
+}
+function explodeOrbits() {
+  for (let i = 0; i < PN; i++) {
+    if (pLife[i] <= 0 || pKind[i] !== 1) continue;
+    const a = pVX[i], sp = 1 + Math.random() * 1.5;
+    pKind[i] = 0; pVX[i] = Math.cos(a) * sp; pVY[i] = Math.sin(a) * sp; pW[i] = 0.93;
+    pLife[i] = pMax[i] = 24 + ((Math.random() * 20) | 0);
+  }
+}
+function updateParticles() {
+  for (let i = 0; i < PN; i++) {
+    if (pLife[i] <= 0) continue;
+    if (pKind[i] === 1) {
+      const f = pLife[i] / pMax[i], r = pVY[i] * f;
+      pVX[i] += pW[i] * (1 + (1 - f) * 2);              // spiral accelerates inward
+      pX[i] = gemX + Math.cos(pVX[i]) * r;
+      pY[i] = gemY + Math.sin(pVX[i]) * r * 0.7;
+    } else {
+      pX[i] += pVX[i]; pY[i] += pVY[i];
+      const d = pW[i]; pVX[i] *= d; pVY[i] *= d;
+      if (pKind[i] === 0) {
+        pVY[i] += 0.03;
+        if (pY[i] > 80) { pY[i] = 80

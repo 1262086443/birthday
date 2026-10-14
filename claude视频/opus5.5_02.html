@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pixel Wizard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  html,body{margin:0;height:100%;background:#07061a;overflow:hidden}
+  canvas{display:block;image-rendering:crisp-edges;image-rendering:pixelated}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(() => {
+'use strict';
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+const W = 128, H = 96, N = W * H;
+const FY = 80;              // floor top row
+const OX = 34, OY = 79;     // wizard feet anchor (center x, boot row)
+
+// ---- Fixed palette (27 entries). Every pixel is an index into this. ----
+const PAL = [
+  '#07061a','#0e0c2a','#171640','#22205a', // 0-3  night sky ramp
+  '#f6f0d0','#c8bf9a','#ffffff',           // 4-6  moon, moon shade, white
+  '#2c2a44','#48445e','#6c6684',           // 7-9  stone dark/mid/light
+  '#0c0610',                               // 10   outline
+  '#4a1626','#8a2638','#c4483e','#e8a33a', // 11-14 robe dark/mid/light, gold trim
+  '#e4dccc','#a89e94',                     // 15-16 beard, beard shade
+  '#eab48c','#b07458',                     // 17-18 skin, skin shade
+  '#5a361e','#94603a',                     // 19-20 wood dark/light
+  '#bff8ff','#4ee6ff','#2a7cff','#9a4aff','#261a6a', // 21-25 magic ramp
+  '#2e2a72'                                // 26   lit sky
+];
+const S0=0,S1=1,S2=2,S3=3,MOON=4,MOONS=5,WHT=6,ST0=7,ST1=8,ST2=9,OUT=10,
+      R0=11,R1=12,R2=13,GOLD=14,BRD=15,BRDS=16,SKN=17,SKNS=18,WD0=19,WD1=20,
+      M0=21,M1=22,M2=23,M3=24,M4=25,S4=26;
+
+// Palette as ABGR uint32 for direct ImageData writes (little-endian)
+const PAL32 = new Uint32Array(PAL.length);
+for (let i = 0; i < PAL.length; i++) {
+  const v = parseInt(PAL[i].slice(1), 16);
+  PAL32[i] = (0xff000000 | ((v & 255) << 16) | (v & 0xff00) | ((v >> 16) & 255)) >>> 0;
+}
+
+// "Brighten one step" lookup: lighting stays inside the palette
+const BR = new Uint8Array(PAL.length);
+const brPairs = [S0,S1, S1,S2, S2,S3, S3,S4, S4,S4, MOON,WHT, MOONS,MOON, WHT,WHT,
+  ST0,ST1, ST1,ST2, ST2,ST2, OUT,R0, R0,R1, R1,R2, R2,GOLD, GOLD,BRD, BRD,WHT,
+  BRDS,BRD, SKN,BRD, SKNS,SKN, WD0,WD1, WD1,GOLD, M0,WHT, M1,M0, M2,M1, M3,M1, M4,M2];
+for (let i = 0; i < brPairs.length; i += 2) BR[brPairs[i]] = brPairs[i + 1];
+
+const BAYER = new Uint8Array([0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5]);
+const RAMP  = new Uint8Array([WHT, M0, M1, M2, M3, M4]); // particle life ramp
+const RN = RAMP.length;
+const RIM   = new Uint8Array([0, M4, M2, M1, M0]);       // rim light by level
+const GR    = new Uint8Array([0, 4, 7, 10, 14]);         // gem glow radius by level
+const SHX = new Int8Array([2,-2,1,-1,1,0,-1,0]);
+const SHY = new Int8Array([1,-1,-1,1,0,1,0,-1]);
+const rd = Math.round;
+
+let seed = 0x2f6b7a1d | 0;
+function rnd() { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 4294967296; }
+function hash(x, y) {
+  let h = (x * 374761393 + y * 668265263) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+// ============================================================
+// BUFFERS
+// ============================================================
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const off = document.createElement('canvas');
+off.width = W; off.height = H;
+const octx = off.getContext('2d');
+const img = octx.createImageData(W, H);
+const out = new Uint32Array(img.data.buffer);
+const fb  = new Uint8Array(N);  // indexed framebuffer
+const bg  = new Uint8Array(N);  // static background
+const lay = new Uint8Array(N);  // wizard sprite layer (0 = empty, 254 = outline mark)
+
+// ============================================================
+// RASTER PRIMITIVES (integer only)
+// ============================================================
+function pset(b, x, y, c) { if (x < 0 || y < 0 || x >= W || y >= H) return; b[y * W + x] = c; }
+function rect(b, x, y, w, h, c) {
+  const x0 = x < 0 ? 0 : x, y0 = y < 0 ? 0 : y;
+  const x1 = x + w > W ? W : x + w, y1 = y + h > H ? H : y + h;
+  for (let j = y0; j < y1; j++) { const r = j * W; for (let i = x0; i < x1; i++) b[r + i] = c; }
+}
+function hline(b, x0, x1, y, c) { if (x1 < x0) { const t = x0; x0 = x1; x1 = t; } rect(b, x0, y, x1 - x0 + 1, 1, c); }
+function line(b, x0, y0, x1, y1, c, th) {
+  const dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+  const dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+  let e = dx + dy;
+  for (;;) {
+    if (th > 1) rect(b, x0 - (th >> 1), y0 - (th >> 1), th, th, c); else pset(b, x0, y0, c);
+    if (x0 === x1 && y0 === y1) break;
+    const e2 = 2 * e;
+    if (e2 >= dy) { e += dy; x0 += sx; }
+    if (e2 <= dx) { e += dx; y0 += sy; }
+  }
+}
+function disc(b, cx, cy, r, c) {
+  const r2 = r * r + r;
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++)
+    if (dx * dx + dy * dy <= r2) pset(b, cx + dx, cy + dy, c);
+}
+function plot8(b, cx, cy, x, y, c, dith) {
+  if (dith && ((x + y) & 1)) return;
+  pset(b, cx + x, cy + y, c); pset(b, cx - x, cy + y, c);
+  pset(b, cx + x, cy - y, c); pset(b, cx - x, cy - y, c);
+  pset(b, cx + y, cy + x, c); pset(b, cx - y, cy + x, c);
+  pset(b, cx + y, cy - x, c); pset(b, cx - y, cy - x, c);
+}
+function circle(b, cx, cy, r, c, dith) {
+  let x = r, y = 0, err = 1 - r;
+  while (x >= y) {
+    plot8(b, cx, cy, x, y, c, dith);
+    y++;
+    if (err < 0) err += 2 * y + 1; else { x--; err += 2 * (y - x) + 1; }
+  }
+}
+function bright(x, y) { if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; fb[i] = BR[fb[i]]; }
+function glowArea(cx, cy, r) {
+  const r2 = r * r, ri = r * 0.55, ri2 = ri * ri;
+  for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) {
+    const dx = x - cx, dy = y - cy, d2 = dx * dx + dy * dy;
+    if (d2 <= ri2) { bright(x, y); if (d2 <= ri2 * 0.35) bright(x, y); }
+    else if (d2 <= r2 && ((x + y) & 1) === 0) bright(x, y);
+  }
+}
+function floorPool(cx, hw, depth) {
+  for (let y = FY; y <= FY + depth; y++) for (let x = cx - hw; x <= cx + hw; x++) {
+    const nx = (x - cx) / hw, ny = (y - FY) / (depth + 1), v = nx * nx + ny * ny;
+    if (v < 0.3) bright(x, y);
+    else if (v < 1 && ((x + y) & 1) === 0) bright(x, y);
+  }
+}
+
+// ============================================================
+// BACKGROUND (built once)
+// ============================================================
+function mtn(x)  { return 63 + rd(3 * Math.sin(x * 0.061 + 0.5) + 2 * Math.sin(x * 0.17 + 2.1) + 1.2 * Math.sin(x * 0.41 + 0.3)); }
+function hill(x) { return 72 + rd(2 * Math.sin(x * 0.09 + 4) + 1.5 * Math.sin(x * 0.23 + 1)); }
+
+function buildBG() {
+  // Ordered-dithered sky bands
+  for (let y = 0; y < FY; y++) for (let x = 0; x < W; x++) {
+    const t = y / (FY - 1), q = 3 * (0.6 * t * t + 0.4 * t);
+    let b = q | 0;
+    if ((q - b) * 16 > BAYER[(y & 3) * 4 + (x & 3)] + 0.5) b++;
+    bg[y * W + x] = b > 3 ? 3 : b;
+  }
+  // Far mountains (moonlit right-facing slopes) and near hills
+  for (let x = 0; x < W; x++) {
+    const h = mtn(x);
+    for (let y = h; y < FY; y++) bg[y * W + x] = S1;
+    bg[h * W + x] = mtn(x + 1) > h ? S3 : S2;
+    const h2 = hill(x);
+    for (let y = h2; y < FY; y++) bg[y * W + x] = S0;
+    bg[h2 * W + x] = S1;
+  }
+  // Moon with dithered halo, shading and craters
+  const mx = 102, my = 17;
+  for (let y = my - 12; y <= my + 12; y++) for (let x = mx - 12; x <= mx + 12; x++) {
+    if (x < 0 || x >= W || y < 0) continue;
+    const dx = x - mx, dy = y - my, d = Math.sqrt(dx * dx + dy * dy), i = y * W + x;
+    if (d <= 7.3) {
+      let c = MOON;
+      if (dx + dy * 0.4 < -3.2 && (d > 4.6 || ((x + y) & 1))) c = MOONS;
+      bg[i] = c;
+    } else if (d < 9.2) bg[i] = BR[bg[i]];
+    else if (d < 12 && ((x + y) & 1) === 0) bg[i] = BR[bg[i]];
+  }
+  const cr = [3,-2, 4,-2, 3,-1, -2,2, -1,3, -2,3, 2,3, -3,-3, 1,-4];
+  for (let k = 0; k < cr.length; k += 2) bg[(my + cr[k + 1]) * W + mx + cr[k]] = MOONS;
+  // Stone floor
+  for (let y = FY; y < H; y++) for (let x = 0; x < W; x++) {
+    let c;
+    if (y === FY) c = ST2;
+    else {
+      const yy = y - FY - 1, course = (yy / 5) | 0, w = yy % 5, o = (course & 1) * 6;
+      if (w === 4 || ((x + o) % 12) === 0) c = ST0;
+      else {
+        c = (w === 0 && course > 0 && ((x + o) % 12) !== 11) ? ST2 : ST1;
+        if (hash(x, y) < 0.07) c = ST0;
+        const dk = (y - (FY + 6)) / (H - FY - 6);
+        if (dk > 0 && dk * 16 > BAYER[(y & 3) * 4 + (x & 3)]) c = (c === ST2) ? ST1 : ST0;
+      }
+    }
+    bg[y * W + x] = c;
+  }
+  // Contact shadow under the wizard
+  hline(bg, OX - 6, OX + 6, FY, ST0);
+  hline(bg, OX - 4, OX + 4, FY + 1, ST0);
+}
+
+// ---- Stars ----
+const NS = 34;
+const sX = new Uint8Array(NS), sY = new Uint8Array(NS), sPh = new Uint8Array(NS),
+      sPer = new Uint8Array(NS), sBig = new Uint8Array(NS);
+(function initStars() {
+  let i = 0, guard = 0;
+  while (i < NS && guard++ < 2000) {
+    const x = (rnd() * W) | 0, y = (rnd() * 58) | 0;
+    const dx = x - 102, dy = y - 17;
+    if (dx * dx + dy * dy < 196) continue;
+    if (y >= mtn(x) - 3) continue;
+    sX[i] = x; sY[i] = y;
+    sPer[i] = 12 + ((rnd() * 30) | 0);
+    sPh[i] = (rnd() * sPer[i]) | 0;
+    sBig[i] = rnd() < 0.18 ? 1 : 0;
+    i++;
+  }
+})();
+
+// ============================================================
+// STATE MACHINE + POSE
+// ============================================================
+const IDLE = 0, CHARGE = 1, CAST = 2, RECOVER = 3;
+const DUR = new Uint16Array([132, 96, 30, 60]);  // ticks @60hz (5.3s loop)
+const EF  = new Float32Array([1, 0.6, 0.2, 1]);  // easing span per state
+const NP = 9; // ang, raise, push, crouch, lean, hatBend, headTilt, robeSway, beardSway
+const KEYS = new Float32Array([
+  0.06, 0,    0, 0,  0, 0,   0, 0,  0,   // IDLE    (rest)
+ -0.20, 1,    2, 1, -1, 0.6,-1, 0,  0,   // CHARGE  (staff overhead)
+  1.35, 0.45, 4, 0,  1, 1.4, 1,-2, -2,   // CAST    (thrust forward)
+  0.06, 0,    0, 0,  0, 0,   0, 0,  0    // RECOVER (rest)
+]);
+const pose = new Float32Array(NP);
+
+let tick = 0, state = IDLE, stTick = 0;
+let uy = 0, lx = 0, head = 0, sway = 0, beardS = 0, bend = 0;
+let ang = 0, dX = 0, dY = -1, handX = 0, handY = 0, tipX = 0, tipY = 0;
+let gemX = 0, gemY = 0, buttX = 0, buttY = 0, glow = 1, blink = false, chargeP = 0;
+let shake = 0, flash = 0, ringT = -1, ringX = 0, ringY = 0;
+let projOn = false, projX = 0, projY = 0, projVX = 0, projVY = 0, projAge = 0;
+
+function easeIO(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+function easeOutBack(t) { const c1 = 1.70158, c3 = c1 + 1, u = t - 1; return 1 + c3 * u * u * u + c1 * u * u; }
+
+function computePose() {
+  // Quantize animation clocks to 10fps -> chunky sprite-animation timing
+  const lt = stTick - stTick % 6, qt = tick - tick % 6;
+  const p = lt / DUR[state];
+  let k = p / EF[state]; if (k > 1) k = 1;
+  const e = state === CAST ? easeOutBack(k) : easeIO(k);
+  const a = ((state + 3) & 3) * NP, b = state * NP;
+  for (let i = 0; i < NP; i++) pose[i] = KEYS[a + i] + (KEYS[b + i] - KEYS[a + i]) * e;
+
+  let bob = 0, sw = 0, bs = 0, jit = 0, bo = 0;
+  const fl = (qt / 6) & 1;
+  if (state === IDLE) {
+    bob = ((qt / 24) | 0) & 1;                 // 2-frame breathing bob
+    sw = Math.sin(qt * 0.045);
+    bs = Math.sin(qt * 0.045 - 1.1);
+  } else if (state === CHARGE) {
+    if (p > 0.35) { sw = fl ? 1 : -1; bs = fl ? -1 : 1; } // magic wind flutter
+    if (p > 0.6) jit = fl;                               // straining tremble
+  } else if (state === RECOVER) {
+    const dmp = 1 - p;                                   // follow-through wobble
+    bo = Math.sin(lt * 0.55) * dmp * 1.2;
+    bs = Math.sin(lt * 0.55 + 1) * dmp * 1.5;
+  }
+  uy = rd(bob + pose[3]); lx = rd(pose[4]); head = rd(pose[6]);
+  sway = rd(pose[7] + sw); beardS = rd(pose[8] + bs);
+  bend = pose[5] + bo; if (bend < 0) bend = 0;
+  ang = pose[0]; dX = Math.sin(ang); dY = -Math.cos(ang);
+  handX = OX + 6 + rd(pose[2]) + lx;
+  handY = OY - 9 + uy - rd(pose[1] * 16) - jit;
+  tipX = rd(handX + dX * 14); tipY = rd(handY + dY * 14);
+  gemX = rd(handX + dX * 16); gemY = rd(handY + dY * 16);
+  buttX = rd(handX - dX * 9); buttY = rd(handY - dY * 9);
+  chargeP = state === CHARGE ? p : 0;
+
+  if (state === IDLE) glow = 1;
+  else if (state === CHARGE) {
+    glow = 1 + ((p * 3) | 0); if (glow > 3) glow = 3;
+    if (p > 0.25 && p < 0.8 && fl && glow > 1) glow--; // flicker
+  } else if (state === CAST) glow = stTick < 6 ? 3 : (stTick < 22 ? 4 : 3);
+  else { glow = 3 - ((p * 2.6) | 0); if (glow < 1) glow = 1; }
+  blink = state === IDLE && (((qt / 6) | 0) % 27) === 0;
+}
+
+// ============================================================
+// PARTICLES (preallocated pool, struct-of-arrays)
+// ============================================================
+const PN = 384;
+const pX = new Float32Array(PN), pY = new Float32Array(PN);
+const pVX = new Float32Array(PN), pVY = new Float32Array(PN), pW = new Float32Array(PN);
+const pL = new Int16Array(PN), pM = new Int16Array(PN), pT = new Uint8Array(PN);
+const ORB = 1, BST = 2, TRL = 3, MOT = 4;
+let pCur = 0;
+
+function spawn() {
+  for (let n = 0; n < PN; n++) { const i = pCur; pCur = (pCur + 1) % PN; if (!pT[i]) return i; }
+  const i = pCur; pCur = (pCur + 1) % PN; return i; // pool full: recycle
+}
+function spawnOrbit() {
+  const i = spawn(), a = rnd() * 6.2832, r = 9 + rnd() * 9;
+  pT[i] = ORB; pVX[i] = a; pVY[i] = r; pW[i] = 0.08 + rnd() * 0.05;
+  pL[i] = 0; pM[i] = Math.ceil((r - 1) / 0.2);
+  pX[i] = gemX + Math.cos(a) * r; pY[i] = gemY + Math.sin(a) * r * 0.85;
+}
+function spawnMote() {
+  const i = spawn();
+  pT[i] = MOT; pX[i] = gemX + (rnd() - 0.5) * 3; pY[i] = gemY;
+  pVX[i] = (rnd() - 0.5) * 0.12; pVY[i] = -0.1 - rnd() * 0.12;
+  pL[i] = 0; pM[i] = 36 + ((rnd() * 30) | 0);
+}
+function cast() {
+  // Orbiting sparks explode outward along their orbit angle
+  for (let i = 0; i < PN; i++) if (pT[i] === ORB) {
+    const a = pVX[i], s = 1 + rnd() * 1.6;
+    pT[i] = BST; pVX[i] = Math.cos(a) * s; pVY[i] = Math.sin(a) * s;
+    pL[i] = 0; pM[i] = 22 + ((rnd() * 18) | 0);
+  }
+  for (let n = 0; n < 40; n++) {
+    const i = spawn(), a = n / 40 * 6.2832 + rnd() * 0.15, s = 0.7 + rnd() * 2.3;
+    pT[i] = BST; pX[i] = gemX; pY[i] = gemY;
+    pVX[i] = Math.cos(a) * s; pVY[i] = Math.sin(a) * s;
+    pL[i] = 0; pM[i] = 18 + ((rnd() * 24) | 0);
+  }
+  projOn = true; projX = gemX + 2; projY = gemY;
+  projVX = 2.3 * dX + 0.4; projVY = dY * 0.45; projAge = 0;
+  ringT = 0; ringX = gemX; ringY = gemY; shake = 12; flash = 8;
+}
+function updParticles() {
+  for (let i = 0; i < PN; i++) {
+    const t = pT[i]; if (!t) continue;
+    if (++pL[i] >= pM[i]) { pT[i] = 0; continue; }
+    if (t === ORB) {
+      const r = pVY[i];
+      pVX[i] += pW[i] * (1 + 4 / r);           // spin faster as it spirals in
+      pVY[i] = r - 0.2;
+      if (pVY[i] < 1) { pT[i] = 0; continue; }
+      pX[i] = gemX + Math.cos(pVX[i]) * pVY[i];
+      pY[i] = gemY + Math.sin(pVX[i]) * pVY[i] * 0.85;
+    } else if (t === BST) {
+      pX[i] += pVX[i]; pY[i] += pVY[i];
+      pVX[i] *= 0.93; pVY[i] = pVY[i] * 0.93 + 0.025;
+    } else {
+      pX[i] += pVX[i]; pY[i] += pVY[i];
+      pVX[i] *= 0.96; pVY[i] *= t === TRL ? 0.96 : 1;
+    }
+  }
+}
+function updProj() {
+  if (!projOn) return;
+  projAge++; projX += projVX; projY += projVY;
+  for (let n = 0; n < 2; n++) {
+    const i = spawn();
+    pT[i] = TRL; pX[i] = projX - 1 - rnd() * 2;
+    pY[i] = projY + Math.sin(projAge * 0.45) + (rnd() - 0.5) * 3;
+    pVX[i] = -0.2 - rnd() * 0.5; pVY[i] = (rnd() - 0.5) * 0.25;
+    pL[i] = 0; pM[i] = 10 + ((rnd() * 12) | 0);
+  }
+  if (projX > W + 12) projOn = false;
+}
+
+// ============================================================
+// FIXED-STEP UPDATE
+// ============================================================
+function update() {
+  tick++; stTick++;
+  if (stTick >= DUR[state]) { state = (state + 1) & 3; stTick = 0; }
+  computePose();
+  if (state === CAST && stTick === 6) cast();
+  if (state === IDLE && tick % 18 === 0) spawnMote();
+  if (state === RECOVER && stTick % 10 === 0) spawnMote();
+  if (state === CHARGE) {
+    const p = stTick / DUR[CHARGE], every = p < 0.3 ? 4 : (p < 0.6 ? 2 : 1);
+    if (stTick % every === 0) spawnOrbit();
+  }
+  updParticles(); updProj();
+  if (shake > 0) shake--;
+  if (flash > 0) flash--;
+  if (ringT >= 0 && ++ringT > 14) ringT = -1;
+}
+
+// ============================================================
+// WIZARD SPRITE (procedural, into the layer buffer)
+// ============================================================
+function drawWizard() {
+  lay.fill(0);
+  const ox = OX, oy = OY, top = oy - 15 + uy, hemY = oy - 1, rh = hemY - top;
+  const pushP = pose[2] > 0 ? pose[2] : 0;
+
+  // Back arm (silhouette bump; swings back on the thrust)
+  const bax = ox - 6 - rd(pushP * 0.6), bay = top + 8 - rd(pushP * 0.8) - rd(pose[1] * 2);
+  line(lay, ox - 4 + lx, top + 1, bax, bay, R0, 2);
+  pset(lay, bax - 1, bay + 1, SKNS); pset(lay, bax, bay + 1, SKNS);
+
+  // Robe: tapered rows with sway, two shades + trim
+  for (let y = top; y <= hemY; y++) {
+    const f = (y - top) / rh;
+    const sh = rd(lx * (1 - f)) + rd(sway * f * f);
+    let xl = ox - rd(4 + f * 3) + sh, xr = ox + rd(3 + f * 3) + sh;
+    if (y === top) { xl++; xr--; }
+    hline(lay, xl, xr, y, R1);
+    hline(lay, xl, xl + 1 + rd(f * 2), y, R0);
+    if (f > 0.45) pset(lay, ox - 1 + sh, y, R0);
+    if (f > 0.6)  pset(lay, ox + 3 + sh, y, R0);
+    if (f < 0.7)  pset(lay, xr, y, R2);
+    if (y === top + 6) hline(lay, xl, xr, y, R0);   // belt
+    if (y === hemY) { hline(lay, xl + 1, xr - 1, y, GOLD); }
+  }
+  // Boots
+  rect(lay, ox - 4, oy, 3, 1, WD0);
+  rect(lay, ox + 1, oy, 4, 1, WD0);
+  pset(lay, ox + 4, oy, WD1);
+
+  // Head
+  const hx = ox - 1 + lx + head, hy = oy - 19 + uy;
+  rect(lay, hx - 1, hy, 2, 4, BRDS);       // hair
+  rect(lay, hx + 1, hy, 4, 4, SKN);        // face
+  pset(lay, hx + 5, hy + 2, SKN);          // nose
+  pset(lay, hx + 5, hy + 3, SKNS);
+  pset(lay, hx + 2, hy + 2, SKNS);         // cheek
+  hline(lay, hx + 2, hx + 4, hy, BRD);     // bushy brow
+  pset(lay, hx + 3, hy + 1, blink ? SKNS : (glow >= 3 ? M0 : OUT)); // eye
+
+  // Long beard with sway
+  hline(lay, hx + 1, hx + 4, hy + 3, BRD); // mustache
+  const blen = 11;
+  for (let i = 1; i <= blen; i++) {
+    const f = i / blen, sh = rd(beardS * f * f), y = hy + 3 + i;
+    const xl = hx - 1 + rd(f * 3.5) + sh;
+    let xr = hx + 5 - rd(f * 2.5) + sh; if (xr < xl) xr = xl;
+    hline(lay, xl, xr, y, BRD);
+    pset(lay, xl, y, BRDS);
+    if ((i & 1) === 0 && xr - xl > 2) pset(lay, xl + 2, y, BRDS);
+  }
+
+  // Hat: brim, gold band, bent cone, drooping tip
+  const brY = hy - 1;
+  hline(lay, hx - 4, hx + 8, brY, R1);
+  pset(lay, hx - 4, brY, R0); pset(lay, hx - 3, brY, R0); pset(lay, hx + 8, brY, R2);
+  hline(lay, hx - 1, hx + 5, brY - 1, GOLD);
+  pset(lay, hx - 1, brY - 1, WD1);
+  const bf = 1.1 + bend;
+  let tx = 0, ty = 0;
+  for (let i = 0; i < 9; i++) {
+    const f = i / 8, w = rd(7 - f * 6), cx = hx + 2 - rd(bf * f * f * 3.2);
+    const y = brY - 2 - i, xl = cx - (w >> 1), xr = xl + w - 1;
+    hline(lay, xl, xr, y, R1);
+    if (w >= 3) pset(lay, xl, y, R0);
+    if (w >= 5) pset(lay, xl + 1, y, R0);
+    if (w >= 2) pset(lay, xr, y, R2);
+    if (i === 3) pset(lay, cx, y, GOLD);
+    tx = xl; ty = y;
+  }
+  const dr = 1 + rd(bend * 1.3);
+  for (let j = 1; j <= dr; j++) pset(lay, tx - j, ty + j - 1, j === 1 ? R1 : R0);
+
+  // Staff: 2px wood, lit side toward the moon
+  const vert = Math.abs(dX) < 0.7;
+  line(lay, buttX, buttY, tipX, tipY, WD0, 1);
+  line(lay, buttX + (vert ? 1 : 0), buttY + (vert ? 0 : -1), tipX + (vert ? 1 : 0), tipY + (vert ? 0 : -1), WD1, 1);
+  // Gold claw + gem placeholder (so the outline wraps the gem)
+  const qx = -dY, qy = dX;
+  pset(lay, tipX, tipY, GOLD);
+  pset(lay, rd(gemX + qx * 2), rd(gemY + qy * 2), GOLD);
+  pset(lay, rd(gemX - qx * 2), rd(gemY - qy * 2), GOLD);
+  pset(lay, rd(gemX + qx * 2 - dX), rd(gemY + qy * 2 - dY), GOLD);
+  pset(lay, rd(gemX - qx * 2 - dX), rd(gemY - qy * 2 - dY), GOLD);
+  rect(lay, gemX - 1, gemY - 1, 3, 3, M1);
+
+  // Front sleeve, cuff, hand gripping the staff
+  const sx = ox + 1 + lx, sy = top + 2;
+  line(lay, sx, sy, handX - 1, handY, R1, 3);
+  const steep = Math.abs(handY - sy) > Math.abs(handX - sx);
+  line(lay, sx + (steep ? -1 : 0), sy + (steep ? 0 : 1),
+            handX - 1 + (steep ? -1 : 0), handY + (steep ? 0 : 1), R0, 1);
+  const len = Math.max(Math.abs(handX - sx), Math.abs(handY - sy), 1), kk = 2 / len;
+  rect(lay, rd(handX - (handX - sx) * kk) - 1, rd(handY - (handY - sy) * kk) - 1, 2, 2, GOLD);
+  rect(lay, handX - 1, handY - 1, 2, 2, SKN);
+  pset(lay, handX - 1, handY, SKNS);
+
+  lay.fill(0, (OY + 1) * W); // nothing below the floor line
+}
+
+// 1px rim light on silhouette edges that face the gem
+function rimPass() {
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x; if (lay[i] === 0) continue;
+    const sx = gemX > x ? 1 : (gemX < x ? -1 : 0), sy = gemY > y ? 1 : (gemY < y ? -1 : 0);
+    if (sx === 0 && sy === 0) continue;
+    const nx = x + sx, ny = y + sy;
+    if (nx >= 0 && nx < W && ny >= 0 && ny < H && lay[ny * W + nx] !== 0) continue;
+    const ex = x - gemX, ey = y - gemY, d2 = ex * ex + ey * ey;
+    const lv = glow - (d2 > 144 ? 1 : 0) - (d2 > 484 ? 1 : 0) - (d2 > 1024 ? 1 : 0);
+    if (lv > 0) lay[i] = RIM[lv];
+  }
+}
+// Dark 4-neighbour outline around the whole silhouette
+function outlinePass() {
+  for (let y = 0; y < H; y++) {
+    const r = y * W;
+    for (let x = 0; x < W; x++) {
+      const i = r + x; if (lay[i] !== 0) continue;
+      let v;
+      if ((x > 0 && (v = lay[i - 1]) && v !== 254) ||
+          (x < W - 1 && (v = lay[i + 1]) && v !== 254) ||
+          (y > 0 && (v = lay[i - W]) && v !== 254) ||
+          (y < H - 1 && (v = lay[i + W]) && v !== 254)) lay[i] = 254;
+    }
+  }
+}
+
+function drawGem() {
+  const x = gemX, y = gemY, fl = ((tick / 6) | 0) & 1;
+  let core = M0, arm = M1, edge = M2;
+  if (state === IDLE && (((tick / 36) | 0) & 1)) { core = M1; arm = M2; edge = M4; }
+  else if (state === CHARGE) { if (fl) arm = M3; if (chargeP > 0.55) core = WHT; }
+  if (glow >= 4) { core = WHT; arm = M0; edge = M1; }
+  pset(fb, x + 1, y - 1, edge); pset(fb, x - 1, y + 1, edge); pset(fb, x + 1, y + 1, edge);
+  pset(fb, x - 1, y, arm); pset(fb, x + 1, y, arm); pset(fb, x, y - 1, arm); pset(fb, x, y + 1, arm);
+  pset(fb, x, y, core);
+  pset(fb, x - 1, y - 1, glow >= 2 ? WHT : M0); // glint
+  if (state === CHARGE && chargeP > 0.5) {
+    const s = fl ? 3 : 4, c = fl ? WHT : M0;
+    pset(fb, x + s, y, c); pset(fb, x - s, y, c); pset(fb, x, y + s, c); pset(fb, x, y - s, c);
+  }
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  fb.set(bg);
+
+  // Twinkling stars (quantized twinkle steps)
+  const st = (tick / 10) | 0;
+  for (let i = 0; i < NS; i++) {
+    const per = sPer[i], k = (st + sPh[i]) % per, big = sBig[i];
+    let c = big ? MOONS : ST2;
+    if (k === 0) c = WHT; else if (k === 1 || k === per - 1) c = big ? MOON : MOONS;
+    pset(fb, sX[i], sY[i], c);
+    if (big && k === 0) {
+      pset(fb, sX[i] + 1, sY[i], ST2); pset(fb, sX[i] - 1, sY[i], ST2);
+      pset(fb, sX[i], sY[i] + 1, ST2); pset(fb, sX[i], sY[i] - 1, ST2);
+    }
+  }
+
+  // Environment lighting from the gem and projectile (palette-step brighten)
+  const gr = GR[glow];
+  if (gr) glowArea(gemX, gemY, gr + (state === CHARGE && ((tick / 6) & 1) ? 1 : 0));
+  if (glow >= 2) floorPool(gemX, gr + 4, 2 + (glow >> 1));
+  if (projOn) {
+    const py = rd(projY);
+    glowArea(rd(projX), py, 7);
+    floorPool(rd(projX), 9, 2);
+  }
+
+  // Wizard: build sprite, light it, outline it, composite
+  drawWizard();
+  rimPass();
+  outlinePass();
+  for (let i = 0; i < N; i++) { const v = lay[i]; if (v) fb[i] = v === 254 ? OUT : v; }
+
+  drawGem();
+
+  // Projectile
+  if (projOn) {
+    const x = rd(projX), y = rd(projY + Math.sin(projAge * 0.45));
+    const big = (projAge >> 1) & 1;
+    disc(fb, x, y, big ? 3 : 2, M2);
+    disc(fb, x, y, 2, M1);
+    disc(fb, x, y, 1, M0);
+    pset(fb, x, y, WHT); pset(fb, x + 1, y, WHT);
+    pset(fb, x + 3 + big, y, M0);
+  }
+
+  // Particles, snapped to the grid
+  for (let i = 0; i < PN; i++) {
+    const t = pT[i]; if (!t) continue;
+    const f = pL[i] / pM[i], ci = (f * RN) | 0;
+    pset(fb, rd(pX[i]), rd(pY[i]), RAMP[ci]);
+    if (t === BST && f < 0.35) pset(fb, rd(pX[i] - pVX[i]), rd(pY[i] - pVY[i]), RAMP[ci + 1]);
+  }
+
+  // Burst ring + star rays
+  if (ringT >= 0) {
+    const ci = Math.min(RN - 1, (ringT / 2.4) | 0);
+    circle(fb, ringX, ringY, 2 + ringT * 2, RAMP[ci], ringT > 7);
+    if (ringT < 6) {
+      const L = 11 - ringT * 2, L2 = (L * 0.6) | 0;
+      for (let k = 1; k <= L; k++) {
+        const c = k < L * 0.5 ? WHT : M0;
+        pset(fb, ringX + k, ringY, c); pset(fb, ringX - k, ringY, c);
+        pset(fb, ringX, ringY + k, c); pset(fb, ringX, ringY - k, c);
+      }
+      for (let k = 1; k <= L2; k++) {
+        pset(fb, ringX + k, ringY + k, M1); pset(fb, ringX - k, ringY + k, M1);
+        pset(fb, ringX + k, ringY - k, M1); pset(fb, ringX - k, ringY - k, M1);
+      }
+      disc(fb, ringX, ringY, 2, WHT);
+    }
+  }
+
+  // Full-scene flash via palette stepping (no blending)
+  if (flash > 0) {
+    const passes = flash > 5 ? 2 : 1;
+    for (let p = 0; p < passes; p++) for (let i = 0; i < N; i++) fb[i] = BR[fb[i]];
+  }
+
+  blit();
+}
+
+// ============================================================
+// DISPLAY (integer scaling, centered, crisp)
+// ============================================================
+let scale = 1, offX = 0, offY = 0;
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const cw = Math.max(1, Math.floor(innerWidth * dpr)), ch = Math.max(1, Math.floor(innerHeight * dpr));
+  cv.width = cw; cv.height = ch;
+  cv.style.width = (cw / dpr) + 'px'; cv.style.height = (ch / dpr) + 'px';
+  scale = Math.max(1, Math.floor(Math.min(cw / W, ch / H)));
+  offX = ((cw - W * scale) / 2) | 0; offY = ((ch - H * scale) / 2) | 0;
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = PAL[0];
+  ctx.fillRect(0, 0, cw, ch);
+}
+function blit() {
+  let sx = 0, sy = 0;
+  if (shake > 0) { const k = (12 - shake) >> 1; sx = SHX[k]; sy = SHY[k]; }
+  for (let y = 0; y < H; y++) {
+    let yy = y + sy; if (yy < 0) yy = 0; else if (yy >= H) yy = H - 1;
+    const r = yy * W, o = y * W;
+    for (let x = 0; x < W; x++) {
+      let xx = x + sx; if (xx < 0) xx = 0; else if (xx >= W) xx = W - 1;
+      out[o + x] = PAL32[fb[r + xx]];
+    }
+  }
+  octx.putImageData(img, 0, 0);
+  ctx.drawImage(off, 0, 0, W, H, offX, offY, W * scale, H * scale);
+}
+
+// ============================================================
+// MAIN LOOP: fixed 60hz simulation, rAF presentation
+// ============================================================
+const STEP = 1000 / 60;
+let acc = 0, last = -1;
+function frame(now) {
+  if (last < 0) last = now;
+  let d = now - last; last = now;
+  if (d > 250) d = 250;
+  acc += d;
+  let n = 0;
+  while (acc >= STEP && n < 10) { update(); acc -= STEP; n++; }
+  if (n === 10) acc = 0;
+  if (n) render();
+  requestAnimationFrame(frame);
+}
+
+buildBG();
+resize();
+addEventListener('resize', resize);
+computePose();
+render();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
